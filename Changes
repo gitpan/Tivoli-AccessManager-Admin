@@ -1,0 +1,16 @@
+Revision history for Perl extension Tivoli::AccessManager::Admin.
+
+0.1   Thu May 27 11:45:00 2004
+	- Initial release; the following features are available in this release:
+		ability to login to a policy server (default or custom)
+		get a user by ID
+		import a user
+		delete a user
+		remove a user
+		get user attributes (cn, dn, sn, description, valid, gso)
+		set user attributes (description, valid, gso)
+
+0.01  Fri May 21 10:04:47 2004
+	- original version; created by h2xs 1.20 with options
+		-n Tivoli::AccessManager::Admin /opt/PolicyDirector/include/ivadminapi.h
+

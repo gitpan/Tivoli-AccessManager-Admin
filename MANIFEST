@@ -1,0 +1,9 @@
+Admin.pm
+Admin.xs
+Admin/User.pm
+Changes
+MANIFEST
+Makefile.PL
+README
+test.pl
+typemap
