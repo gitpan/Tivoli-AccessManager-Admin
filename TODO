@@ -1,0 +1,24 @@
+ACL.pm         -- hash checks done, existence checks done 
+Action.pm      -- hash checks done, existence checks don't make sense
+AuthzRule.pm   -- hash checks done, existence checks done
+
+Context.pm     -- hash checks done, existence checks don't make sense
+Domain.pm      -- hash checks done, existence checks done
+Group.pm       -- hash checks done, existence checks done
+Objectspace.pm -- hash checks done, existence checks done
+POP.pm	       -- hash checks done, existence checks done
+
+ProtObject.pm  -- NOTHING
+Response.pm    -- DNA
+User.pm	       -- hash checks done, existence checks done
+------
+It would be really cool to add attach and detach methods to POP and ACL.  They
+will largely be wrappers around the ProtObject calls, but I like the sense of
+completeness.
+------
+The create methods are not very standard yet.  They should all check at least
+the object class before calling new.  They all also need to verify $self did
+not return undef
+-------
+Should ever find method allow a filter?
+-------
