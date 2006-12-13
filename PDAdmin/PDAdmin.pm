@@ -1,5 +1,7 @@
 package Tivoli::AccessManager::PDAdmin;
 
+$Tivoli::AccessManager::PDAdmin::VERSION = '1.11';
+
 use Tivoli::AccessManager::PDAdmin::acl;
 use Tivoli::AccessManager::PDAdmin::authzrule;
 use Tivoli::AccessManager::PDAdmin::group;

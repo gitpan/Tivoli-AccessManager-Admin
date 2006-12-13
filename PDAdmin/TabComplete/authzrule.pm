@@ -1,4 +1,6 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::authzrule;
+$Tivoli::AccessManager::PDAdmin::TabComplete::authzrule::VERSION = '1.11';
+
 use strict;
 use warnings;
 

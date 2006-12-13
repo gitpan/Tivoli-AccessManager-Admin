@@ -3,14 +3,14 @@ use strict;
 use warnings;
 use Carp;
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: Response.pm 338 2006-12-13 16:57:19Z mik $
+# $Id: Response.pm 343 2006-12-13 18:27:52Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::Response::VERSION = '1.10';
+$Tivoli::AccessManager::Admin::Response::VERSION = '1.11';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-g -Wall',
-		VERSION => '1.10',
+		VERSION => '1.11',
 		NAME   => 'Tivoli::AccessManager::Admin::Response',
 	  );
 

@@ -1,4 +1,6 @@
 package Tivoli::AccessManager::PDAdmin::group;
+$Tivoli::AccessManager::PDAdmin::group::VERSION = '1.11';
+
 use strict;
 use warnings;
 use Text::Wrap;

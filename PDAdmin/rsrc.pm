@@ -1,4 +1,6 @@
 package Tivoli::AccessManager::PDAdmin::rsrc;
+$Tivoli::AccessManager::PDAdmin::rsrc::VERSION = '1.11';
+
 use strict;
 use warnings;
 use Text::Wrap;

@@ -1,5 +1,7 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete;
 
+$Tivoli::AccessManager::PDAdmin::TabComplete::VERSION = '1.11';
+
 use Tivoli::AccessManager::PDAdmin::TabComplete::acl;
 use Tivoli::AccessManager::PDAdmin::TabComplete::authzrule;
 use Tivoli::AccessManager::PDAdmin::TabComplete::group;

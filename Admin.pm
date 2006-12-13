@@ -14,10 +14,10 @@ use Tivoli::AccessManager::Admin::SSO::Web;
 use Tivoli::AccessManager::Admin::SSO::Group;
 use Tivoli::AccessManager::Admin::SSO::Cred;
 
-$Tivoli::AccessManager::Admin::VERSION = '1.10';
+$Tivoli::AccessManager::Admin::VERSION = '1.11';
 use Inline( C => 'DATA',
 	    NAME => 'Tivoli::AccessManager::Admin',
-	    VERSION => '1.10'
+	    VERSION => '1.11'
 	  );
 
 my %dispatch = ( 

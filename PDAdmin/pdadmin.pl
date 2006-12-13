@@ -2,8 +2,9 @@
 use strict;
 use warnings;
 #---
-# $Id: pdadmin.pl 305 2006-09-28 19:18:01Z mik $
+# $Id: pdadmin.pl 341 2006-12-13 18:19:24Z mik $
 #---
+$VERSION = '1.10';
 
 use Tivoli::AccessManager::Admin;
 use Term::ReadKey;

@@ -4,15 +4,15 @@ use strict;
 use warnings;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: Objectspace.pm 338 2006-12-13 16:57:19Z mik $
+# $Id: Objectspace.pm 343 2006-12-13 18:27:52Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-$Tivoli::AccessManager::Admin::Objectspace::VERSION = '1.10';
+$Tivoli::AccessManager::Admin::Objectspace::VERSION = '1.11';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.10',
+		VERSION => '1.11',
 		NAME => 'Tivoli::AccessManager::Admin::Objectspace',
 	  );
 use Tivoli::AccessManager::Admin::Response;

@@ -1,4 +1,6 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::server;
+$Tivoli::AccessManager::PDAdmin::TabComplete::server::VERSION = '1.11';
+
 use strict;
 use warnings;
 

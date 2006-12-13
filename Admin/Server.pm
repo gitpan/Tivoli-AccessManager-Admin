@@ -6,14 +6,14 @@ use Data::Dumper;
 use Tivoli::AccessManager::Admin::Response;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: Server.pm 338 2006-12-13 16:57:19Z mik $
+# $Id: Server.pm 343 2006-12-13 18:27:52Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::Server::VERSION = '1.10';
+$Tivoli::AccessManager::Admin::Server::VERSION = '1.11';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lpdmgrapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.10',
+		VERSION => '1.11',
 		NAME => 'Tivoli::AccessManager::Admin::Server',
 	   );
 

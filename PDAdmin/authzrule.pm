@@ -1,4 +1,6 @@
 package Tivoli::AccessManager::PDAdmin::authzrule;
+$Tivoli::AccessManager::PDAdmin::authzrule::VERSION = '1.11';
+
 use strict;
 use warnings;
 use Text::Wrap;

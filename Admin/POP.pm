@@ -4,14 +4,14 @@ use warnings;
 use Carp;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: POP.pm 338 2006-12-13 16:57:19Z mik $
+# $Id: POP.pm 343 2006-12-13 18:27:52Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::POP::VERSION = '1.10';
+$Tivoli::AccessManager::Admin::POP::VERSION = '1.11';
 use Inline( C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.10',
+		VERSION => '1.11',
 	        NAME => 'Tivoli::AccessManager::Admin::POP',
 	    );
 

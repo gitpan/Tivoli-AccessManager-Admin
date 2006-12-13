@@ -8,12 +8,12 @@ use Data::Dumper;
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # $Id$
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::SSO::Group::VERSION = '1.10';
+$Tivoli::AccessManager::Admin::SSO::Group::VERSION = '1.11';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.10',
+		VERSION => '1.11',
 		NAME => 'Tivoli::AccessManager::Admin::SSO::Group',
 	   );
 

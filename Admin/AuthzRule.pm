@@ -9,12 +9,12 @@ use Tivoli::AccessManager::Admin::Response;
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # $Id: ACL.pm 189 2005-12-15 05:39:43Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::AuthzRule::VERSION = '1.10';
+$Tivoli::AccessManager::Admin::AuthzRule::VERSION = '1.11';
 use Inline( C => 'DATA',
 		 INC  => '-I/opt/PolicyDirector/include',
                  LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		 CCFLAGS => '-Wall',
-		 VERSION => '1.10',
+		 VERSION => '1.11',
 		 NAME => 'Tivoli::AccessManager::Admin::AuthzRule');
 
 sub new {

@@ -1,4 +1,6 @@
 package Tivoli::AccessManager::PDAdmin::objectspace;
+$Tivoli::AccessManager::PDAdmin::objectspace::VERSION = '1.11';
+
 use strict;
 use warnings;
 
