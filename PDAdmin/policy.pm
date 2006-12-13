@@ -82,11 +82,16 @@ sub _tod {
     return $object->tod( %values );
 }
 
+sub _max_concur_session {
+    my ($object, $value) = @_;
+    return $object->max_concur_session($value);
+}
+
 sub _display {
     my $object = shift;
     my $resp;
     my ($expire,$disable,$fail,$age,$repeats,$alphas,$nonalphas);
-    my ($length,$spaces,%tod,$days,$hours,$temp);
+    my ($length,$spaces,%tod,$days,$hours,$maxsession,$temp);
 
     # Collect all the data
     $resp = $object->accexpdate;
@@ -99,16 +104,26 @@ sub _display {
     }
     printf "Disable Time Interval:        %-20s\n", $disable;
 
+    $resp       = $object->max_concur_session;
+    $maxsession = $resp->value || 'unset';
+    printf "Maximum concurrent sessions:  %-20s\n", $maxsession;
+
     $resp = $object->maxlgnfails;
     $fail = $resp->value || 'unset';
     printf "Maximum login failures:       %-20s\n", $fail;
 
     $resp = $object->maxpwdage;
     $temp = $resp->value;
-    $days = ($temp - $temp%86400)/86400;
-    $temp %= 86400;
-    $hours = ($temp - $temp%3600)/3600;
-    printf "Maximum Password Age:         %d days, %d hours (%d seconds)\n", $days, $hours, scalar($resp->value);
+    if ( $temp =~ /^\d+$/ ) {
+	$days = ($temp - $temp%86400)/86400;
+	$temp %= 86400;
+	$hours = ($temp - $temp%3600)/3600;
+	printf "Maximum Password Age:         %d days, %d hours (%d seconds)\n", 
+		    $days, $hours, scalar($resp->value);
+    }
+    else {
+	printf "Maximum Password Age:         %-20s\n", $temp;
+    }
 
     $resp = $object->maxpwdrepchars;
     $repeats = $resp->value || 'unset';
@@ -173,6 +188,7 @@ sub set {
 	'spaces'                      => \&_pwdspaces,
 	'tod-access'                  => \&_tod,
 	'tod'                         => \&_tod,
+	'max-concurrent-web-sessions' => \&_max_concur_session,
 	'all'			      => \&_display,
     );
 

@@ -1,19 +1,20 @@
 package Tivoli::AccessManager::Admin::User;
 use strict;
 use warnings;
+use Data::Dumper;
 use Carp;
 use Tivoli::AccessManager::Admin::Response;
 use Tivoli::AccessManager::Admin::Group;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: User.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: User.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::User::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::User::VERSION = '1.10';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME => 'Tivoli::AccessManager::Admin::User',
 	  );
 
@@ -244,7 +245,7 @@ sub description {
     my $resp = Tivoli::AccessManager::Admin::Response->new();
    
     if ( $self->{exist} ) {
-	my $desc  = '';
+	my $desc;
 
 	if ( @_ == 1 ) {
 	    $desc = shift;
@@ -259,13 +260,19 @@ sub description {
 	    $desc = $opts{description} || '';
 	}
 
-	if ( $desc ) {
-	    my $rc = $self->user_setdescription( $resp, $desc);
-	    $self->user_get($resp);
+	if ( defined $desc ) {
+	    my $rc = $self->user_setdescription($resp, $desc);
+	    $resp->isok && $self->user_get($resp);
 	}
 	if ( $resp->isok ) {
-	    my $rc = $self->user_getdescription || '';
-	    $resp->isok() && $resp->set_value( $rc );
+	    my $rc = $self->user_getdescription;
+	    if ( defined $rc ) {
+		$resp->set_value($rc);
+	    }
+	    else {
+		$resp->set_message("Could not retrieve user's description");
+		$resp->set_isok(0);
+	    }
 	}
     }
     else {
@@ -298,16 +305,21 @@ sub accexpdate {
 	$lifetime = 0;
     }
 
-
     if ( $lifetime ) {
 	if ( $lifetime =~ /^\d+$/ ) {
 	    $unlimited = 0;
 	    $unset   = 0;
 	}
+	elsif ( $lifetime eq 'unlimited' ) {
+	    ($unlimited,$unset,$lifetime) = (1,0,0);
+	}
+	elsif ( $lifetime eq 'unset' ) {
+	    ($unlimited,$unset,$lifetime) = (0,1,0);
+	}
 	else {
-	    $unlimited = $lifetime eq 'unlimited';
-	    $unset   = $lifetime eq 'unset';
-	    $lifetime = 0;
+	    $resp->set_message("The parameter must either be an integer, 'unset' or 'unlimited'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->user_setaccexpdate( $resp,
 					 $lifetime,
@@ -316,7 +328,7 @@ sub accexpdate {
 	$resp->isok && $self->user_get($resp);
     } 
     if ( $resp->isok ) {
-	($seconds,$unlimited,$unset) = $self->user_getaccexpdate( $resp );
+	($seconds,$unlimited,$unset) = $self->user_getaccexpdate($resp);
 	$resp->set_value( $unlimited ? "unlimited" : $unset ? "unset" : $seconds);
     }
 
@@ -349,10 +361,16 @@ sub disabletimeint {
 	    $disable = 0;
 	    $unset   = 0;
 	}
+	elsif ($seconds eq 'disable') {
+	    ($disable,$unset,$seconds) = (1,0,0);
+	}
+	elsif ($seconds eq 'unset') {
+	    ($disable,$unset,$seconds) = (0,1,0);
+	}
 	else {
-	    $disable = $seconds eq 'disable';
-	    $unset   = $seconds eq 'unset';
-	    $seconds = 0;
+	    $resp->set_message("The parameter must either be an integer, 'disable' or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 
 	$rc = $self->user_setdisabletimeint( $resp,
@@ -394,9 +412,14 @@ sub maxlgnfails {
 	if ( $failures =~ /^\d+$/ ) {
 	    $unset   = 0;
 	}
-	else {
+	elsif ($failures eq 'unset') {
 	    $failures = 0;
 	    $unset   = 1;
+	}
+	else {
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 
 	$rc = $self->user_setmaxlgnfails( $resp,
@@ -437,9 +460,14 @@ sub maxpwdage {
 	if ( $seconds =~ /^\d+$/ ) {
 	    $unset   = 0;
 	}
-	else {
+	elsif ($seconds eq 'unset') {
 	    $seconds = 0;
 	    $unset   = 1;
+	}
+	else {
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	
 	$rc = $self->user_setmaxpwdage( $resp,
@@ -478,11 +506,16 @@ sub maxpwdrepchars {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars = 0;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 0;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->user_setmaxpwdrepchars( $resp,
 						$chars,
@@ -520,11 +553,16 @@ sub minpwdalphas {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars   = 0;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 0;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->user_setminpwdalphas( $resp,
 					   $chars,
@@ -562,11 +600,16 @@ sub minpwdnonalphas {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars = 0;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 0;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->user_setminpwdnonalphas( $resp,
 					      $chars,
@@ -605,11 +648,16 @@ sub minpwdlen {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars   = 8;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 1;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->user_setminpwdlen( $resp,
 					$chars,
@@ -619,6 +667,77 @@ sub minpwdlen {
     if ( $resp->isok ) {
 	($chars,$unset) = $self->user_getminpwdlen( $resp );
 	$resp->set_value($unset ? "unset" : $chars);
+    }
+
+    return $resp;
+}
+
+sub max_concur_session {
+    my $self = shift;
+    my $resp = Tivoli::AccessManager::Admin::Response->new();
+    my ($session,$unset,$unlimited,$displace,$rc);
+
+    if ( @_ == 1 ) {
+	$session = shift;
+    }
+    elsif ( @_ % 2 ) {
+	$resp->set_message("Invalid syntax");
+	$resp->set_isok(0);
+	return $resp;
+    }
+    elsif ( @_ ) {
+	my %opts = @_;
+	$session = $opts{session} || '';
+    }
+    else {
+	$session = '';
+    }
+
+    if ( $session ) {
+	if ( $session =~ /^\d+$/ ) {
+	    ($unset,$unlimited,$displace) = (0,0,0);
+	}
+	elsif ($session eq 'displace') {
+	    ($session,$unset,$unlimited,$displace) = (0,0,0,1);
+	}
+	elsif ($session eq 'unlimited') {
+	    ($session,$unset,$unlimited,$displace) = (0,0,1,0);
+	}
+	elsif ($session eq 'unset') {
+	    ($session,$unset,$unlimited,$displace) = (0,1,0,0);
+	}
+	else {
+	    $resp->set_message("The parameter must be either an integers, 'displace', 'unlimited' or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
+	}
+
+	$rc = $self->user_setmaxconcurwebsess( $resp,
+						  $session,
+						  $displace,
+						  $unlimited,
+						  $unset,
+						 );
+	$resp->set_value($rc);
+	
+    }
+    if ( $resp->isok ) {
+	my $retval;
+	($session,$displace,$unlimited,$unset) = $self->user_getmaxconcurwebsess( $resp );
+
+	if ($unset) {
+	    $retval = 'unset';
+	}
+	elsif ($displace) {
+	    $retval = 'displace';
+	}
+	elsif ($unlimited) {
+	    $retval = 'unlimited';
+	}
+	else {
+	    $retval = $session;
+	}
+	$resp->set_value($retval);
     }
 
     return $resp;
@@ -646,16 +765,21 @@ sub pwdspaces {
     }
 
     if ( $allowed ) {
-	if ( $allowed eq 'unset' ) {
+	if ($allowed =~ /^\d+$/) {
+	    $unset = 0;
+	}
+	elsif ( $allowed eq 'unset' ) {
 	    $allowed = 0;
 	    $unset   = 1;
 	}
 	else {
-	    $unset   = 0;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->user_setpwdspaces( $resp,
-					   $allowed,
-			      	           $unset );
+					$allowed,
+			      	        $unset );
 	$resp->isok && $self->user_get($resp);
     } 
     if ( $resp->isok ) {
@@ -1105,8 +1229,9 @@ Tivoli::AccessManager::Admin::User
 =head1 DESCRIPTION
 
 L<Tivoli::AccessManager::Admin::User> implements the User portion of the TAM API.  There is a fair
-amount of overlap between L<Tivoli::AccessManager::Admin::User> and L<Tivoli::AccessManager::Admin::Context>.  Since I am a
-lazy POD writer, I will refer you to that FM when appropriate.
+amount of overlap between L<Tivoli::AccessManager::Admin::User> and
+L<Tivoli::AccessManager::Admin::Context>.  Since I am a lazy POD writer, I
+will refer you to that FM when appropriate.
 
 =head1 CONSTRUCTOR
 
@@ -1368,6 +1493,24 @@ The new password
 The success of the operation.  Kindly note that there is no get password
 function
 
+=head2 description( STR )
+
+Changes the user's description to the specified value
+
+=head3 Parameters
+
+=over 4
+
+=item STR
+
+The new description
+
+=back
+
+=head3 Returns
+
+The user's description.
+
 =head2 passwordvalid( 0|1 )
 
 Marks the user's password valid or not
@@ -1432,8 +1575,12 @@ Returns the user's ID, if known.
 
 =head2 pwdspaces
 
+=head2 max_concur_session
+
 These are identical to the same named functions in L<Tivoli::AccessManager::Admin::Context>.
-See that very fine manual for documentation.
+See that very fine manual for documentation.  I will repeat one caveat here.
+If you perform a get on a non-existent user, the functions will not return an
+error.  No idea why not.
 
 =head1 TODO
 
@@ -1547,7 +1694,7 @@ int user_create( SV* self, SV* resp, const char* pwd, AV* groups, int sso, int n
     ivadmin_response* rsp = _getresponse( resp );
 
     unsigned long rc;
-    char* name = _getname(self);
+    const char* name = _getname(self);
     char* dn = _fetch(self,"dn");
     char* cn = _fetch(self,"cn");
     char* sn = _fetch(self,"sn");
@@ -1672,24 +1819,31 @@ SV* user_getcn( SV* self ) {
 SV* user_getdescription( SV* self ) {
     ivadmin_ldapuser* user = _userget(self);
     char *desc;
+    SV* bob;
 
     if ( user == NULL ) 
 	croak("user_getdescription: could not retrieve ivadmin_ldapuser object");
  
     desc = (char*)ivadmin_user_getdescription(*user);
-    return(desc ? newSVpv(desc,0) : NULL);
+    bob = desc ? newSVpv(desc,0) : NULL;
+    return(bob);
 }
 
 int user_setdescription(SV* self, SV* resp, const char* desc) {
     ivadmin_context* ctx   = _getcontext(self);
     ivadmin_response* rsp  = _getresponse(resp);
+    unsigned long rc;
 
     char *name = _getname(self);
     
     if ( name == NULL )
 	croak("user_setdescription: could not retrieve user name");
-    
-    return(IVADMIN_TRUE == ivadmin_user_setdescription(*ctx,name,desc,rsp));
+   
+    rc = ivadmin_user_setdescription(*ctx,
+				     name, 
+				     desc,
+				     rsp);
+    return(IVADMIN_TRUE == rc);
 }
 
 SV* user_getdn( SV* self ) {
@@ -1845,10 +1999,43 @@ void user_getaccexpdate( SV* self, SV* resp ) {
     Inline_Stack_Done;
 }
 
+void user_getmaxconcurwebsess(SV *self, SV* resp) {
+    ivadmin_context* ctx = _getcontext(self);
+    ivadmin_response* rsp = _getresponse( resp );
+    const char *name = _getname(self);
+
+    unsigned long session   = 0;
+    unsigned long displace  = 0;
+    unsigned long unlimited = 0;
+    unsigned long unset     = 0;
+
+    unsigned long rc = 0;
+
+    Inline_Stack_Vars;
+    Inline_Stack_Reset;
+
+    rc = ivadmin_user_getmaxconcurwebsess( *ctx,
+				      name,
+				      &session,
+				      &displace,
+				      &unlimited,
+				      &unset,
+				      rsp);
+    
+    if ( rc == IVADMIN_TRUE ) {
+	Inline_Stack_Push(sv_2mortal(newSViv(session)));
+	Inline_Stack_Push(sv_2mortal(newSViv(displace == IVADMIN_TRUE)));
+	Inline_Stack_Push(sv_2mortal(newSViv(unlimited == IVADMIN_TRUE)));
+	Inline_Stack_Push(sv_2mortal(newSViv(unset == IVADMIN_TRUE)));
+    }
+
+    Inline_Stack_Done;
+}
+
 int user_setaccexpdate( SV* self, SV* resp, unsigned long seconds, unsigned long unlimited, unsigned long unset) {
     ivadmin_context* ctx = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char *name = _getname(self);
+    const char *name = _getname(self);
 
     unsigned long rc = 0;
 
@@ -1897,10 +2084,10 @@ void user_getdisabletimeint( SV* self, SV* resp ) {
 int user_setdisabletimeint( SV* self, SV* resp, unsigned long seconds, unsigned long unlimited, unsigned long unset) {
     ivadmin_context* ctx = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char* name = _getname(self);
+    const char* name = _getname(self);
 
     if( name == NULL )
-	croak("user_getdisabletimeint: could not retrieve user name");
+	croak("user_setdisabletimeint: could not retrieve user name");
 
     return ivadmin_user_setdisabletimeint( *ctx,
     					name,
@@ -1940,7 +2127,7 @@ void user_getmaxlgnfails( SV* self, SV* resp ) {
 int user_setmaxlgnfails( SV* self, SV* resp, unsigned long failures, unsigned long unset) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char* name = _getname(self);
+    const char* name = _getname(self);
 
     unsigned long rc = 0;
 
@@ -1986,7 +2173,7 @@ void user_getmaxpwdage( SV* self, SV* resp ) {
 int user_setmaxpwdage( SV* self, SV* resp, unsigned long seconds, unsigned long unset) {
     ivadmin_context* ctx = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char* name = _getname(self);
+    const char* name = _getname(self);
 
     unsigned long rc;
 
@@ -2032,7 +2219,7 @@ void user_getmaxpwdrepchars( SV* self, SV* resp ) {
 int user_setmaxpwdrepchars( SV* self, SV* resp, unsigned long chars, unsigned long unset) {
     ivadmin_context* ctx = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char* name = _getname(self);
+    const char* name = _getname(self);
 
     unsigned long rc;
 
@@ -2107,7 +2294,7 @@ void user_getminpwdalphas( SV* self, SV* resp ) {
 int user_setminpwdalphas( SV* self, SV* resp, unsigned long chars, unsigned long unset) {
     ivadmin_context* ctx = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char* name = _getname(self);
+    const char* name = _getname(self);
 
     unsigned long rc;
 
@@ -2152,7 +2339,7 @@ void user_getminpwdlen( SV* self, SV* resp ) {
 int user_setminpwdlen( SV* self, SV* resp, unsigned long length, unsigned long unset) {
     ivadmin_context* ctx = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char* name = _getname(self);
+    const char* name = _getname(self);
 
     unsigned long rc;
 
@@ -2160,10 +2347,10 @@ int user_setminpwdlen( SV* self, SV* resp, unsigned long length, unsigned long u
 	croak("user_setminpwdlen: could not retrieve user name");
 
     rc =  ivadmin_user_setminpwdlen( *ctx,
-    					name,
-    					length,
-					unset,
-					rsp );
+    				     name,
+    				     length,
+				     unset ? IVADMIN_TRUE : IVADMIN_FALSE,
+				     rsp );
     return(rc == IVADMIN_TRUE);
 }
 
@@ -2242,7 +2429,7 @@ void user_getpwdspaces( SV* self, SV* resp ) {
 int user_setpwdspaces( SV* self, SV* resp, unsigned long allowed, unsigned long unset) {
     ivadmin_context* ctx = _getcontext(self);
     ivadmin_response* rsp = _getresponse( resp );
-    char* name = _getname(self);
+    const char* name = _getname(self);
 
     unsigned long rc;
 
@@ -2313,6 +2500,23 @@ int user_settodaccess( SV* self, SV* resp, unsigned long days, unsigned long sta
 				     unset,
 				     rsp );
     return(rc == IVADMIN_TRUE);
+}
+
+int user_setmaxconcurwebsess(SV* self, SV* resp, unsigned long sessions,
+				unsigned long displace, unsigned long
+				unlimited, unsigned long unset) {
+
+    ivadmin_context* ctx = _getcontext(self);
+    ivadmin_response* rsp = _getresponse( resp );
+
+    char *name = _getname(self);
+    return( ivadmin_user_setmaxconcurwebsess(*ctx,
+				        name,
+    					sessions,
+    					displace,
+    					unlimited,
+    					unset,
+					rsp ) );
 }
 
 int user_import( SV* self, SV* resp, char *groupname, int sso ) {

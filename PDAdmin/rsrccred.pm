@@ -1,10 +1,10 @@
 package Tivoli::AccessManager::PDAdmin::rsrccred;
 use strict;
 use warnings;
+
 use Text::Wrap;
 use Term::ReadKey;
-
-$Tivoli::AccessManager::PDAdmin::rsrccred::VERSION = '1.00';
+use Data::Dumper;
 
 sub help {
     my $key = shift || '';

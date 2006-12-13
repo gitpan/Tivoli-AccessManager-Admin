@@ -10,12 +10,12 @@ use Data::Dumper;
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # $Id$
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::SSO::Cred::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::SSO::Cred::VERSION = '1.10';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME => 'Tivoli::AccessManager::Admin::SSO::Cred',
 	   );
 
@@ -24,12 +24,12 @@ sub _get_credtype {
     my $resp;
 
     my $test = Tivoli::AccessManager::Admin::SSO::Web->new( $tam, name => $cred );
-    if ( $test->exist ) {
+    if ($test->exist) {
 	return 'web';
     }
     else {
 	$test = Tivoli::AccessManager::Admin::SSO::Group->new( $tam, name => $cred );
-	if ( $test->exist ) {
+	if ($test->exist) {
 	    return 'group';
 	}
     }
@@ -116,10 +116,6 @@ sub create {
 	$resp->set_message("You must define the SSO resource");
 	$resp->set_isok(0);
 	return $resp;
-    }
-
-    unless ( $self->{type} ) {
-	$self->{type} = _get_credtype($self->{resource}) || 'web';
     }
 
     my $rc = $self->ssocred_create($resp);

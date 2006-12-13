@@ -4,15 +4,15 @@ use strict;
 use warnings;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: Objectspace.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: Objectspace.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-$Tivoli::AccessManager::Admin::Objectspace::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::Objectspace::VERSION = '1.10';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME => 'Tivoli::AccessManager::Admin::Objectspace',
 	  );
 use Tivoli::AccessManager::Admin::Response;
@@ -39,6 +39,7 @@ my %rev_obj_types = map { $obj_types{$_} => $_ } keys %obj_types;
 sub new {
     my $class = shift;
     my $cont  = shift;
+
     unless ( defined($cont) and UNIVERSAL::isa($cont,'Tivoli::AccessManager::Admin::Context' ) ) {
 	warn "Incorrect syntax -- did you forget the context?\n";
 	return undef;
@@ -52,47 +53,31 @@ sub new {
     my %opts  = @_;
 
     $self->{name}    = $opts{name} || '';
-    $self->{desc}    = $opts{description} || '';
+    $self->{desc}    = $opts{desc} || '';
     $self->{exist}   = 0;
     $self->{context} = $cont;
 
     if ( defined $opts{type} ) {
 	if ( $opts{type} =~ /^\d+$/ ) {
-	    if ( defined $rev_obj_types{$opts{type}} ) {
-		$self->{type} = $rev_obj_types{$opts{type}};
+	    if (defined $rev_obj_types{$opts{type}}) {
+		$self->{type} = $opts{type};
 	    }
 	    else {
-		carp( "Unknown object type $opts{type}" );
-		$self->{type} = 'unknown';
+		warn( "Unknown object type $opts{type}\n" );
+		return undef;
 	    }
 	}
 	else {
-	    if ( defined $obj_types{$opts{type}} ) {
+	    if (defined $obj_types{$opts{type}}) {
 		$self->{type} = $obj_types{$opts{type}};
 	    }
 	    else {
-		carp( "Unknown object type $opts{type}" );
-		$self->{type} = 'unknown';
+		warn( "Unknown object type $opts{type}\n" );
+		return undef;
 	    }
 	}
     }
 
-
-    # If we were givin a name, lets see if the protected object exists and
-    # preload the info.  I don't think this works.  Oh, I wish somebody could
-    # explain to me why an objectspace is useful.
-#    if ( $self->{name} ) {
-#	my $pobj = Tivoli::AccessManager::Admin::ProtObject->new( $self->{context},
-#					        name => $self->{name} );
-#	if ( $pobj->exist ) {
-#	    my $resp;
-#	    $resp = $pobj->type;
-#	    $self->{type} = $resp->value if $resp->isok;
-#	    $resp = $pobj->description;
-#	    $self->{desc} = $resp->value if $resp->isok;
-#	    $self->{exist} = 1;
-#	}
-#    }
     return $self;
 }
 
@@ -100,9 +85,20 @@ sub create {
     my $self = shift;
     my $resp = Tivoli::AccessManager::Admin::Response->new;
 
-    unless ( ref $self ) {
+    unless (ref $self) {
 	my $pd = shift;
+	unless ( defined($pd) and UNIVERSAL::isa($pd,'Tivoli::AccessManager::Admin::Context' ) ) {
+	    $resp->set_message("Incorrect syntax -- did you forget the context?");
+	    $resp->set_isok(0);
+	    return $resp;
+	}
+
 	$self = new( $self, $pd, @_ );
+	unless ( defined($self) ) {
+	    $resp->set_isok(0);
+	    $resp->set_message("Could not create self");
+	    return $resp;
+	}
     }
 
     if ( @_ % 2 ) {
@@ -112,7 +108,7 @@ sub create {
     }
     my %opts = @_;
 
-    if ( $self->exist ) {
+    if ($self->exist) {
 	$resp->set_message( $self->{name} . " already exists" );
 	$resp->set_iswarning(1);
 
@@ -124,12 +120,12 @@ sub create {
     }
 
     unless ( $self->{type} ) {
-	$self->{type} = 'unknown';
+	$self->{type} = 0;
     }
 
     if ( $self->{name} ) {
-	my $rc = $self->objectspace_create( $resp, $obj_types{$self->{type}} );
-	$resp->isok and $resp->set_value($rc);
+	my $rc = $self->objectspace_create( $resp, $self->{type} );
+	$resp->isok and $resp->set_value($self);
 	$self->{exist} = $resp->isok;
     }
     else {
@@ -145,13 +141,22 @@ sub delete {
     my $rc;
 
     unless ( $self->{name} ) {
-	$resp->set_message("delete syntax error");
+	$resp->set_message("Cannot delete a nameless objectspace");
+	$resp->set_isok(0);
+	return $resp;
+    }
+
+    unless ( $self->{exist} ) {
+	$resp->set_message("Cannot delete a non-existent objectspace");
 	$resp->set_isok(0);
 	return $resp;
     }
 
     $rc = $self->objectspace_delete( $resp );
-    $resp->isok and $resp->set_value($rc);
+    if ($resp->isok) {
+	$resp->set_value($rc);
+	$self->{exist} = 0;
+    }
 
     return $resp;
 }
@@ -177,6 +182,7 @@ sub list {
 }
 
 sub exist { return $_[0]->{exist}; }
+
 1;
 
 =head1 NAME
@@ -312,6 +318,11 @@ is being used as a class method.
 =head3 Returns
 
 A list of all the objectspaces defined in the domain.
+
+=head2 exist
+
+Returns true if the objectspace exists.  This is a read only method and DOES
+NOT use a L<Tivoli::AccessManager::Admin::Response>.
 
 =head1 ACKNOWLEDGEMENTS
 

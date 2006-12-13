@@ -5,8 +5,6 @@ use warnings;
 use Text::Wrap;
 use Term::ReadKey;
 
-$Tivoli::AccessManager::PDAdmin::user::VERSION = '1.00';
-
 sub help {
     my $key = shift || '';
     my @help = (

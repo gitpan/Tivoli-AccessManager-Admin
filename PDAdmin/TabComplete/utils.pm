@@ -2,7 +2,6 @@ package Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 use strict;
 use warnings;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::utils::VERSION = '1.00';
 
 my %guessDN;
 

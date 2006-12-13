@@ -7,14 +7,14 @@ use Data::Dumper;
 use Tivoli::AccessManager::Admin::Response;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: ProtObject.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: ProtObject.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::ProtObject::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::ProtObject::VERSION = '1.10';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME => 'Tivoli::AccessManager::Admin::ProtObject',
 	    );
 
@@ -43,7 +43,7 @@ sub new {
     $type		 = $opts{type} || 0;
 
     #Figure out the object type, or set to unknown.
-    unless ( $type =~ /^\d+$/ and $type >= 0 and $type < 18 ) {
+    unless (($type =~ /^\d+$/) and ($type < 18)) {
 	carp("Unknown object type: $type");
 	return undef;
     }
@@ -102,7 +102,7 @@ sub create {
 	return $resp;
     }
 
-    unless ( $type =~ /^\d+$/ and $type >= 0 and $type < 18 ) {
+    unless ( $type =~ /^\d+$/ and $type < 18 ) {
 	$resp->set_message("Unknown object type: $type");
 	$resp->set_isok(0);
 	return $resp;
@@ -168,7 +168,7 @@ sub acl {
     }
 
     $ret{attached} = $self->protobj_getaclid() || '';
-    $ret{effective} = $self->protobj_geteffaclid() || '';
+    $ret{effective} = $self->protobj_geteffaclid();
 
     $resp->set_value( \%ret );
     return $resp;
@@ -236,8 +236,7 @@ sub type {
     }
 
     if ($type) {
-	
-	unless ( $type =~ /^\d+$/ and $type >= 0 and $type < 18 ) {
+	unless ( $type =~ /^\d+$/ and $type < 18 ) {
 	    $resp->set_message("Invalid object type $type");
 	    $resp->set_isok(0);
 	    return $resp;
@@ -454,11 +453,9 @@ sub attributes {
 
     # just in case one of the above branches was actually taken, refresh the
     # cached object
-    if ( $resp->isok ) {
-	$self->get($resp);
-	for my $key ( $self->protobj_attrlist ) {
-	    $rhash->{$key} = [ $self->protobj_attrget($key) ];
-	}
+    $self->get($resp);
+    for my $key ( $self->protobj_attrlist ) {
+	$rhash->{$key} = [ $self->protobj_attrget($key) ];
     }
    
     $resp->isok && $resp->set_value( $rhash );

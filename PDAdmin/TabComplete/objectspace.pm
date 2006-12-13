@@ -4,8 +4,6 @@ use warnings;
 
 use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::objectspace::VERSION = '1.00';
-
 sub complete {
     my ($tam, $tokref, $word, $buffer, $start) = @_;
     my ($command, $subcom,$resp, $tok_cnt);

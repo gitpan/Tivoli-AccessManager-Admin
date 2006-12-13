@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 # vim: set filetype=perl:
+# COVER:Response.pm
 use strict;
 use warnings;
 

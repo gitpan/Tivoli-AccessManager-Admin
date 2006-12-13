@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 # vim: set filetype=perl:
+# COVER:SSO/Web.pm
 use strict;
 use warnings;
 use Term::ReadKey;
 use Data::Dumper;
 
-use Test::More qw/no_plan/;
+use Test::More tests => 41;
 
 BEGIN {
     use_ok( 'Tivoli::AccessManager::Admin' );
@@ -27,7 +28,7 @@ my $resp;
 isa_ok($sso, "Tivoli::AccessManager::Admin::SSO::Web");
 is($sso->name, 'twiki', "Retrieved the name");
 
-$sso = Tivoli::AccessManager::Admin::SSO::Web->new($pd,name => 'twiki',description => 'test');
+$sso = Tivoli::AccessManager::Admin::SSO::Web->new($pd,name => 'twiki',desc => 'test');
 isa_ok($sso, "Tivoli::AccessManager::Admin::SSO::Web");
 is($sso->name, 'twiki', "Retrieved the name");
 is($sso->description, 'test', "Retrieved the description");
@@ -49,11 +50,12 @@ is($resp->isok,1, 'Deleted the resource') or diag(Dumper($resp));
 $resp = $sso->delete();
 is($resp->isok,0, 'Could not delete a resource that does not exist');
 
-$sso = Tivoli::AccessManager::Admin::SSO::Web->new( $pd, name => 'twiki' );
+$sso = Tivoli::AccessManager::Admin::SSO::Web->new($pd,name =>
+    'twiki',desc=>'Foo' );
 $resp = $sso->create;
 is($resp->isok,1,'Created a resource with name only');
 is($sso->name,'twiki','Got the name back');
-is($sso->description, '', 'And no description');
+is($sso->description, 'Foo', 'And no description');
 $resp = $sso->delete();
 
 $sso = Tivoli::AccessManager::Admin::SSO::Web->new($pd);
@@ -64,7 +66,7 @@ is($sso->description, '', 'And no description');
 $resp = $sso->delete();
 
 $sso = Tivoli::AccessManager::Admin::SSO::Web->new($pd);
-$resp = $sso->create(name => 'twiki', description => 'test');
+$resp = $sso->create(name => 'twiki', desc => 'test');
 is($resp->isok,1,'Created a resource with name and description');
 is($sso->name,'twiki','Got the name back');
 is($sso->description, 'test', 'And the description');
@@ -107,9 +109,29 @@ is($resp->isok,0,"Couldn't send an odd number of parameters");
 $resp = Tivoli::AccessManager::Admin::SSO::Web->create($pd);
 is($resp->isok,0,"Couldn't create an unnamed resource");
 
+$resp = Tivoli::AccessManager::Admin::SSO::Web->list();
+is($resp->isok,0,"Could not call list without an empty list");
+$resp = Tivoli::AccessManager::Admin::SSO::Web->list(qw/one two three/);
+is($resp->isok,0,"Could not call list with a non-context");
+
 $sso = Tivoli::AccessManager::Admin::SSO::Web->new($pd);
 $resp = $sso->create(qw/one two three/);
 is($resp->isok,0,"Couldn't send an odd number of parameters");
 
 my $name = $sso->name;
 is($name,'', 'Got no name from an nonexistant resource');
+
+print "\nTESTING evil\n";
+$sso->{exist} = 1;
+$resp = $sso->delete;
+is($resp->isok,0,"Could not delete evil");
+
+$sso->{exist} = 0;
+$resp = Tivoli::AccessManager::Admin::SSO::Web->create($pd, name => 'twiki');
+$sso = $resp->value;
+
+$sso->{exist} = 0;
+$resp = $sso->create;
+is($resp->isok,0,"Could not create evil");
+$sso->{exist} = 1;
+$resp = $sso->delete;

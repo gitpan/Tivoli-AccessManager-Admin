@@ -1,9 +1,9 @@
 package Tivoli::AccessManager::PDAdmin::pop;
 use strict;
 use warnings;
-use Text::Wrap;
 
-$Tivoli::AccessManager::PDAdmin::pop::VERSION = '1.00';
+use Text::Wrap;
+use Data::Dumper;
 
 sub help {
     my $key = shift || '';

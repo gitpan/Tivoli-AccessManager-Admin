@@ -1,9 +1,9 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::server;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::server::VERSION = '1.00';
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
+use Data::Dumper;
 
 my %commands;
 

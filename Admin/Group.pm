@@ -4,14 +4,14 @@ use warnings;
 use Carp;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: Group.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: Group.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::Group::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::Group::VERSION = '1.10';
 use Inline( C => 'DATA',
 	        INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 	        NAME   => 'Tivoli::AccessManager::Admin::Group',
 		);
 use Tivoli::AccessManager::Admin::Response;
@@ -21,12 +21,12 @@ sub new {
     my $cont  = shift;
     my $resp = Tivoli::AccessManager::Admin::Response->new();
 
-    unless ( defined($cont) and UNIVERSAL::isa($cont,'Tivoli::AccessManager::Admin::Context' ) ) {
+    unless (defined($cont) and UNIVERSAL::isa($cont,'Tivoli::AccessManager::Admin::Context')) {
 	warn "Incorrect syntax -- did you forget the context?\n";
 	return undef;
     }
 
-    if ( @_ % 2 ) {
+    if (@_ % 2) {
 	warn "Invalid syntax -- you did not send a hash\n";
 	return undef;
     }
@@ -41,11 +41,11 @@ sub new {
     $self->_groupstore();
     $self->{context} = $cont;
 
-    if ( $self->{dn} ) {
+    if ($self->{dn}) {
 	my $rc = $self->group_getbydn($resp);
 
 	# The group already exists
-	if ( $resp->isok() ) {
+	if ($resp->isok()) {
 	    $self->{dn} = $self->group_getdn();
 	    $self->{cn}   = $self->group_getcn();
 	    $self->{name} = $self->group_getname();
@@ -53,9 +53,9 @@ sub new {
 	}
     }
 
-    if ( $self->{name} and not $self->{exist} ) {
-	my $rc = $self->group_get( $resp );
-	if ( $resp->isok() ) {
+    if ($self->{name} and not $self->{exist}) {
+	my $rc = $self->group_get($resp);
+	if ($resp->isok) {
 	    $self->{dn} = $self->group_getdn();
 	    $self->{cn} = $self->group_getcn();
 	    $self->{exist} = 1;
@@ -70,19 +70,19 @@ sub create {
     my $resp = Tivoli::AccessManager::Admin::Response->new();
     my $rc;
 
-    unless ( ref $self ) {
+    unless (ref $self) {
 	my $pd = shift;
-	$self = new($self, $pd, @_ );
+	$self = new($self, $pd, @_);
     }
 
-    if ( @_ % 2 ) {
+    if (@_ % 2) {
 	$resp->set_message("Invalid syntax");
 	$resp->set_isok(0);
 	return $resp;
     }
     my %opts = @_;
 
-    if ( $self->{exist} ) {
+    if ($self->{exist}) {
 	$resp->set_message("The group $self->{name} already exists");
 	$resp->set_iswarning(1);
 	$resp->set_value($self);
@@ -96,17 +96,17 @@ sub create {
 
     $self->{cn} = $self->{name} unless $opts{cn};
 
-    if ( $self->{cn} and $self->{dn} and $self->{name}) {
-	$rc = $self->group_create( $resp, $opts{container} || "" );
-	if ( $resp->isok ) {
+    if ($self->{cn} and $self->{dn} and $self->{name}) {
+	$rc = $self->group_create($resp, $opts{container} || "");
+	if ($resp->isok) {
 	    $self->{exist} = 1;
 	    $resp->set_value($self);
 	}
     }
     else {
-	$resp->set_message("Syntax error in creating group -- the cn, dn and name must be defined" );
+	$resp->set_message("Syntax error in creating group -- the cn, dn and name must be defined");
 	$resp->set_isok(0);
-	$resp->set_value( 'undef' );
+	$resp->set_value('undef');
     }
 
     return $resp;
@@ -117,14 +117,14 @@ sub delete {
 
     my $resp = Tivoli::AccessManager::Admin::Response->new();
 
-    if ( $self->{exist} ) {
+    if ($self->{exist}) {
 	my $rc;
 	my $reg  = 0;
 
-	if ( @_ == 1 ) {
+	if (@_ == 1) {
 	    $reg = shift;
 	}
-	elsif ( @_ % 2 ) {
+	elsif (@_ % 2) {
 	    $resp->set_message("Invalid syntax");
 	    $resp->set_isok(0);
 	    return $resp;
@@ -135,8 +135,8 @@ sub delete {
 	}
 
 	$rc = $self->group_delete($resp,$reg);
-	if ( $resp->isok ) {
-	    $resp->set_value( $rc );
+	if ($resp->isok) {
+	    $resp->set_value($rc);
 	    $self->_groupfree;
 	    $self->{exist} = 0;
 	}
@@ -153,13 +153,13 @@ sub description {
     my $self = shift;
     my $resp = Tivoli::AccessManager::Admin::Response->new();
    
-    if ( $self->{exist} ) {
+    if ($self->{exist}) {
 	my $desc  = '';
 
-	if ( @_ == 1 ) {
+	if (@_ == 1) {
 	    $desc = shift;
 	}
-	elsif ( @_ % 2 ) {
+	elsif (@_ % 2) {
 	    $resp->set_message("Invalid syntax");
 	    $resp->set_isok(0);
 	    return $resp;
@@ -169,17 +169,16 @@ sub description {
 	    $desc = $opts{description} || '';
 	}
 
-	if ( $desc ) {
-	    my $rc = $self->group_setdescription( $resp, $desc);
-	    $self->group_get($resp);
+	if ($desc) {
+	    my $rc = $self->group_setdescription($resp, $desc);
+	    $resp->isok && $self->group_get($resp);
 	}
-	if ( $resp->isok ) {
-	    my $rc = $self->group_getdescription || '';
-	    $resp->isok() && $resp->set_value( $rc );
+	if ($resp->isok) {
+	    $resp->set_value($self->group_getdescription || '');
 	}
     }
     else {
-	$resp->set_message( "The group does not yet exist" );
+	$resp->set_message("The group does not yet exist");
 	$resp->set_isok(0);
     }
 
@@ -191,11 +190,11 @@ sub cn {
     
     my $resp = Tivoli::AccessManager::Admin::Response->new();
 
-    if ( $self->{cn} ) {
-	$resp->set_value( $self->{cn} || '');
+    if ($self->{cn}) {
+	$resp->set_value($self->{cn});
     }
     else {
-	$resp->set_message( "The cn for this group is not defined" );
+	$resp->set_message("The cn for this group is not defined");
 	$resp->set_isok(0);
     }
     return $resp;
@@ -206,11 +205,11 @@ sub dn {
     
     my $resp = Tivoli::AccessManager::Admin::Response->new();
 
-    if ( $self->{dn} ) {
-	$resp->set_value( $self->{dn} || '');
+    if ($self->{dn}) {
+	$resp->set_value($self->{dn});
     }
     else {
-	$resp->set_message( "The dn for this group is not defined" );
+	$resp->set_message("The dn for this group is not defined");
 	$resp->set_isok(0);
     }
     return $resp;
@@ -220,7 +219,7 @@ sub _addmembers {
     my $self = shift;
     my %opts = @_;
 
-    my ( %hash, @junc,@add );
+    my (%hash, @junc,@add);
 
     my $resp = Tivoli::AccessManager::Admin::Response->new();
     # This is suckage.  I need to make sure there are no duplicates in the add
@@ -237,25 +236,24 @@ sub _addmembers {
     @junc = grep { not $hash{lc($_)} } @add;
 
     # In theory, the two lists (those we are adding and those who are not in
-    # the list should be the same.  
-    if ( @junc != @add and $opts{force}) {
+    # the list) should be the same.  
+    if (@junc != @add and $opts{force}) {
 	@add = @junc;
-	unless ( @add ) {
-	    $resp->set_message("All of the users are already members in $self->{name}" );
+	unless (@add) {
+	    $resp->set_message("All of the users are already members in $self->{name}");
 	    $resp->set_iswarning(1);
 	    return $resp;
 	}
     }
-    elsif ( @junc != @add ) {
+    elsif (@junc != @add) {
 	my $message = "The following users are already in $self->{name}: ";
-	$resp->set_message( $message . join(", ", @{$opts{existing}}) );
+	$resp->set_message($message . join(", ", @{$opts{existing}}));
 	$resp->set_value([@junc]);
 	$resp->set_iswarning(1);
 	return $resp;
     }
 
     my $rc = $self->group_addmembers($resp,\@add);
-    $resp->isok() && $resp->set_value($rc);
 
     return $resp;
 }
@@ -264,7 +262,7 @@ sub _removemembers {
     my $self = shift;
     my %opts = @_;
 
-    my ( %hash, @intersect, @rem );
+    my (%hash, @intersect, @rem);
 
     my $resp = Tivoli::AccessManager::Admin::Response->new();
     %hash = map { my $f = lc $_; $f => 1 } @{$opts{remove}};
@@ -273,26 +271,25 @@ sub _removemembers {
     %hash = map { my $f = lc $_; $f => 1 } @{$opts{existing}};
     @intersect = grep { $hash{$_} } @rem;
 
-    if ( @intersect != @rem and $opts{force} ) {
-	unless ( @intersect ) {
+    if (@intersect != @rem and $opts{force}) {
+	unless (@intersect) {
 	    $resp->set_message("There are no members to remove");
 	    $resp->set_iswarning(1);
 	    return $resp;
 	}
 	@rem = @intersect;
     }
-    elsif ( @intersect != @rem ) {
+    elsif (@intersect != @rem) {
 	%hash = map {$_ => 1} @rem;
 	delete $hash{lc($_)} for @intersect;
 
 	my $message = "The following are not in $self->{name}: ";
-	$resp->set_message( $message,  join( ", ", keys %hash ) );
+	$resp->set_message($message,  join(", ", keys %hash));
 	$resp->set_isok(0);
 	return $resp;
     }
 
     my $rc = $self->group_removemembers($resp, \@rem);
-    $resp->isok() && $resp->set_value($rc);
     
     return $resp; 
 }
@@ -300,10 +297,10 @@ sub _removemembers {
 sub members {
     my $self = shift;
     my $resp = Tivoli::AccessManager::Admin::Response->new();
-    my %job = ( add => \&_addmembers,
-    		remove => \&_removemembers );
+    my %job = (add => \&_addmembers,
+    		remove => \&_removemembers);
 
-    if ( @_ % 2 ) {
+    if (@_ % 2) {
 	$resp->set_message("Invalid syntax");
 	$resp->set_isok(0);
 	return $resp;
@@ -311,27 +308,27 @@ sub members {
     my %opts = @_;
 
     $opts{force} = defined($opts{force}) ? $opts{force} : 0;
-    unless ( $self->{exist} ) {
-	$resp->set_message( "The group does not exist" );
+    unless ($self->{exist}) {
+	$resp->set_message("The group does not exist");
 	$resp->set_isok(0);
 	return $resp;
     }
 
     # Get the list of users, 
     my @rc = sort $self->group_getmembers($resp);
-    return $resp unless ( $resp->isok );
+    return $resp unless ($resp->isok);
 
-    unless ( defined( $opts{add} ) or defined( $opts{remove} ) ) {
+    unless (defined($opts{add}) or defined($opts{remove})) {
 	$resp->set_value(\@rc);
 	return $resp;
     }
 
-    for my $action ( qw/remove add/ ) {
-	if ( defined( $opts{$action} ) and ref($opts{$action}) eq 'ARRAY' ) {
-	    $resp = $job{$action}-> ( $self, %opts, existing => \@rc ) ;
+    for my $action (qw/remove add/) {
+	if (defined($opts{$action}) and ref($opts{$action}) eq 'ARRAY') {
+	    $resp = $job{$action}-> ($self, %opts, existing => \@rc) ;
 	    return $resp unless $resp->isok;
 	}
-	elsif ( defined( $opts{$action} ) ) {
+	elsif (defined($opts{$action})) {
 	    $resp->set_message("Invalid syntax: $action => array ref");
 	    $resp->set_isok(0);
 	    return $resp;
@@ -350,14 +347,14 @@ sub list {
 
     # I want this to be called as either Tivoli::AccessManager::Admin::Group->list of
     # $self->list
-    if ( ref $class ) {
+    if (ref $class) {
 	$pd = $class->{context};
     }
     else {
 	$pd = shift;
     }
 
-    if ( @_ % 2 ) {
+    if (@_ % 2) {
 	$resp->set_message("Invalid syntax");
 	$resp->set_isok(0);
 	return $resp;
@@ -365,15 +362,15 @@ sub list {
     my %opts = @_;
     $opts{bydn} ||= 0;
 
-    $opts{maxreturn} = 0 unless defined( $opts{maxreturn} );
-    $opts{pattern}   = '*' unless defined( $opts{pattern} );
+    $opts{maxreturn} = 0 unless defined($opts{maxreturn});
+    $opts{pattern}   = '*' unless defined($opts{pattern});
 
 
-    my @rc = $opts{bydn} ? group_listbydn( $pd, $resp, $opts{pattern},
-				 	 $opts{maxreturn} ) :
-			   group_list( $pd, $resp, $opts{pattern},
-				         $opts{maxreturn} );
-    $resp->isok() && $resp->set_value( \@rc );
+    my @rc = $opts{bydn} ? group_listbydn($pd, $resp, $opts{pattern},
+				 	 $opts{maxreturn}) :
+			   group_list($pd, $resp, $opts{pattern},
+				         $opts{maxreturn});
+    $resp->isok() && $resp->set_value(\@rc);
     return $resp;
 }
 
@@ -381,36 +378,36 @@ sub groupimport {
     my $self = shift;
     my $resp = Tivoli::AccessManager::Admin::Response->new();
 
-    unless ( ref $self ) {
+    unless (ref $self) {
 	my $pd = shift;
-	$self = new( $self, $pd, @_ );
+	$self = new($self, $pd, @_);
     }
 
-    if ( @_ % 2 ) {
+    if (@_ % 2) {
 	$resp->set_message("Invalid syntax");
 	$resp->set_isok(0);
 	return $resp;
     }
     my %opts = @_;
 
-    if ( $self->{exist} ) {
+    if ($self->{exist}) {
 	$resp->set_message("Cannot import a group that already exists");
 	$resp->set_isok(0);
 	return $resp;
     }
 
-    unless ( $self->{name} ) {
+    unless ($self->{name}) {
 	$self->{name} = $opts{name} || "";
     }
 
-    unless ( $self->{dn} ) {
+    unless ($self->{dn}) {
 	$self->{dn} = $opts{dn} || "";
     }
 
-    if ( $self->{name} and $self->{dn} ) {
-	my $rc = $self->group_import( $resp, $opts{container} || "" );
-	if ( $resp->isok() ) {
-	    $self->group_get( $resp );
+    if ($self->{name} and $self->{dn}) {
+	my $rc = $self->group_import($resp, $opts{container} || "");
+	if ($resp->isok()) {
+	    $self->group_get($resp);
 	    $self->{cn} = $self->group_getcn();
 	    $self->{exist} = 1;
 	}
@@ -441,56 +438,56 @@ Tivoli::AccessManager::Admin::Group
 
     use Tivoli::AccessManager::Admin;
 
-    my ( $resp, @groups );
+    my ($resp, @groups);
 
-    my $pd  = Tivoli::AccessManager::Admin->new(password => 'N3ew0nk' );
+    my $pd  = Tivoli::AccessManager::Admin->new(password => 'N3ew0nk');
 
     # Lets see who is there
-    $resp = Tivoli::AccessManager::Admin::Group->list( $pd, pattern => "lgroup*" );
-    print join( "\n", @{$resp->value} );
+    $resp = Tivoli::AccessManager::Admin::Group->list($pd, pattern => "lgroup*");
+    print join("\n", @{$resp->value});
     # Alternately, search by DN.
-    $resp = Tivoli::AccessManager::Admin::Group->list( $pd, pattern => "lgroup*", bydn => 1 );
-    print join( "\n", @{$resp->value} );
+    $resp = Tivoli::AccessManager::Admin::Group->list($pd, pattern => "lgroup*", bydn => 1);
+    print join("\n", @{$resp->value});
 
     # Create a new group the easy way
-    $resp = Tivoli::AccessManager::Admin::Group->create( $pd, 
+    $resp = Tivoli::AccessManager::Admin::Group->create($pd, 
 					name => 'lgroup',
 					dn => 'cn=lgroup,ou=groups,o=rox,c=us',
 					cn => 'lgroup'
-				    );
+				   );
     $groups[0] = $resp->value if $resp->is_ok;
 
     # Create a few more groups in a different way
-    for my $i ( 1 .. 3 ) {
+    for my $i (1 .. 3) {
 	my $name = sprintf "lgroup%02d", $i;
-	$groups[$i] = Tivoli::AccessManager::Admin::Group->new( $pd, name => $name );
+	$groups[$i] = Tivoli::AccessManager::Admin::Group->new($pd, name => $name);
 	# Don't attempt to create something that already exists
 	next if $groups[$i]->exist;
 
-	$resp = $groups[$i]->create(dn => "cn=$name,ou=groups,o=rox,c=us" );
+	$resp = $groups[$i]->create(dn => "cn=$name,ou=groups,o=rox,c=us");
     }
 
     # Add members to the group, skipping those users already in the group
-    $resp = $groups[0]->members( add => [qw/luser01 luser02 luser03 luser04 luser05/ ], 
-    			     force => 1 );
+    $resp = $groups[0]->members(add => [qw/luser01 luser02 luser03 luser04 luser05/ ], 
+    			     force => 1);
 
     # List the members
     $resp = $groups[0]->members();
-    print "\t$_\n" for ( @{$resp->value()} );
+    print "\t$_\n" for (@{$resp->value()});
 
     # Remove members
-    $resp = $groups[0]->members( remove => [qw/luser02 luser03/] );
+    $resp = $groups[0]->members(remove => [qw/luser02 luser03/]);
 
     # Add and remove members at the same time
-    $resp = $groups[0]->members( remove => [qw/luser01 luser04/],
+    $resp = $groups[0]->members(remove => [qw/luser01 luser04/],
 			     add    => [qw/luser02 luser03/ ]
-			    );
+			   );
     # Delete the group
     $resp = $groups[0]->delete();
 
     # We didn't remove it from the registry.  Import it and delete it again
     $resp = $groups[0]->groupimport();
-    $resp = $groups[0]->delete( 1 );
+    $resp = $groups[0]->delete(1);
     
 =head1 DESCRIPTION
 
@@ -498,7 +495,7 @@ B<Tivoli::AccessManager::Admin::Group> provides the interface to the group porti
 
 =head1 CONSTRUCTOR
 
-=head2 new( PDADMIN[, name=E<gt> NAME, dn =E<gt> DN, cn =E<gt> CN] )
+=head2 new(PDADMIN[, name=E<gt> NAME, dn =E<gt> DN, cn =E<gt> CN])
 
 Creates a blessed B<Tivoli::AccessManager::Admin::Group> object and returns it.
 
@@ -515,13 +512,13 @@ the object and recreating it.
 =item name =E<gt> NAME
 
 The name of the group to which the object refers.  B<new> will query TAM to determine if the
-group exists or not, retrieving the other values ( cn and dn ) if it does.
+group exists or not, retrieving the other values (cn and dn) if it does.
 
 =item dn =E<gt> DN
 
-The group's DN.  If this value is provided ( but L</"name"> is not ), B<new>
+The group's DN.  If this value is provided (but L</"name"> is not), B<new>
 will look to see if the group is already defined.  If the group is, the other
-fields ( name and cn ) will be retrieved from TAM.
+fields (name and cn) will be retrieved from TAM.
 
 =item cn =E<gt> CN
 
@@ -589,7 +586,7 @@ Given that all return values are cleverly hidden in the returned
 L<Tivoli::AccessManager::Admin::Response> object, I am not going to worry about documenting that
 part.  I will only say what will be in the object.
 
-=head2 create( name =E<gt> NAME, dn =E<gt> DN, cn =E<gt> CN, container =E<gt> 'CONTAINER NAME')
+=head2 create(name =E<gt> NAME, dn =E<gt> DN, cn =E<gt> CN, container =E<gt> 'CONTAINER NAME')
 
 L</"create"> a new group in TAM.  At the bare minimum, both the name and
 the DN must be defined.  See L</"Parameters"> below for a full discussion.
@@ -666,7 +663,7 @@ A flag indicating if the group exists or not.
 =head2 cn
 
 Returns the CN for the group.  This is a read-only function.  No sets are
-allowed via the TAM API ( go see L<Net::LDAP> if you really want to do this ).
+allowed via the TAM API (go see L<Net::LDAP> if you really want to do this).
 
 =head2 dn
 
@@ -678,9 +675,9 @@ allowed via the TAM API.
 Returns the name for the group.  This is a read-only function.  No sets are
 allowed via the TAM API. 
 
-=head2 members( add =E<gt> [qw/list of users/],
+=head2 members(add =E<gt> [qw/list of users/],
 	         remove =E<gt> [qw/list of users/],
-	         force =E<gt> 1 )
+	         force =E<gt> 1)
 
 Adds, removes and retrieves the members of a group.  The add and remove
 option can be used at the same time -- removes are processed first.  If the
@@ -713,7 +710,7 @@ If no members will be added/deleted, you will get a warning in the response.
 
 Unless there is an error, you will get the new membership list for the group.
 
-=head2 list( maxreturn =E<gt> NUMBER, pattern =E<gt> STRING )
+=head2 list(maxreturn =E<gt> NUMBER, pattern =E<gt> STRING)
 
 Gets a list of groups defined in TAM.  If the pattern contains an '=', list
 will search by DNs.  Otherwise, it will search by name.  Yes, this is the same
@@ -740,7 +737,7 @@ about it.  This will default to *.  It too could cause issues with the LDAP.
 
 The list of groups that matched the search criteria.
 
-=head2 groupimport( [name =E<gt> NAME, dn =E<gt> DN, container =E<gt> 'CONTAINER' )
+=head2 groupimport([name =E<gt> NAME, dn =E<gt> DN, container =E<gt> 'CONTAINER')
 
 Imports an already existing LDAP group into TAM.  This can also be used to
 create a new L<Tivoli::AccessManager::Admin::Group> object.
@@ -782,73 +779,73 @@ __C__
 
 #include "ivadminapi.h"
 
-ivadmin_response* _getresponse( SV* self ) {
+ivadmin_response* _getresponse(SV* self) {
     HV* self_hash = (HV*) SvRV(self);
     SV** fetched = hv_fetch(self_hash,"response",8,0);
     ivadmin_response* rsp;
 
-    if ( fetched == NULL ) {
+    if (fetched == NULL) {
 	croak("Couldn't fetch the _response in $self");
     }
     rsp = (ivadmin_response*) SvIV(*fetched);
 
-    fetched = hv_fetch( self_hash, "used",4,0);
-    if ( fetched ) {
-	sv_setiv( *fetched, 1 );
+    fetched = hv_fetch(self_hash, "used",4,0);
+    if (fetched) {
+	sv_setiv(*fetched, 1);
     }
-    return( rsp );
+    return(rsp);
 }
 
-static ivadmin_context* _getcontext( SV* self ) {
+static ivadmin_context* _getcontext(SV* self) {
     HV* self_hash = (HV*) SvRV(self);
-    SV** fetched = hv_fetch(self_hash,"context", 7, 0 );
+    SV** fetched = hv_fetch(self_hash,"context", 7, 0);
 
-    if ( fetched == NULL ) {
+    if (fetched == NULL) {
 	croak("Couldn't get context");
     }
-    return( (ivadmin_context*)SvIV(SvRV(*fetched)) );
+    return((ivadmin_context*)SvIV(SvRV(*fetched)));
 }
 
-static char* _getname( SV* self ) {
+static char* _getname(SV* self) {
     HV* self_hash = (HV*) SvRV(self);
-    SV** fetched  = hv_fetch(self_hash, "name", 4, 0 );
+    SV** fetched  = hv_fetch(self_hash, "name", 4, 0);
 
-    return( fetched ? SvPV_nolen(*fetched) : NULL );
+    return(fetched ? SvPV_nolen(*fetched) : NULL);
 }
 
-static char* _fetch( SV* self, char* field ) {
+static char* _fetch(SV* self, char* field) {
     HV* self_hash = (HV*) SvRV(self);
-    SV** fetched  = hv_fetch(self_hash, field, strlen(field), 0 );
+    SV** fetched  = hv_fetch(self_hash, field, strlen(field), 0);
 
     return fetched ? SvPV_nolen(*fetched) : NULL;
 }
 
-void _groupstore( SV* self ) {
+void _groupstore(SV* self) {
     HV* self_hash = (HV*) SvRV(self);
     SV** fetched = hv_fetch(self_hash, "_group",6,1);
     ivadmin_ldapgroup* group;
 
-    if ( fetched == NULL )
-	croak ( "Couldn't create the _group slot");
+    if (fetched == NULL)
+	croak ("Couldn't create the _group slot");
 
-    Newz( 5, group, 1, ivadmin_ldapgroup );
+    Newz(5, group, 1, ivadmin_ldapgroup);
 
-    sv_setiv(*fetched, (IV) group );
+    sv_setiv(*fetched, (IV) group);
     SvREADONLY_on(*fetched);
 }
 
-ivadmin_ldapgroup* _getgroup( SV* self ) {
+ivadmin_ldapgroup* _getgroup(SV* self) {
     HV* self_hash = (HV*) SvRV(self);
-    SV** fetched  = hv_fetch(self_hash, "_group", 6, 0 );
+    SV** fetched  = hv_fetch(self_hash, "_group", 6, 0);
 
-    if ( fetched == NULL ) {
-	return( NULL );
+    if (fetched == NULL) {
+	return(NULL);
     }
 
-    return( (ivadmin_ldapgroup*) SvIV(*fetched) );
+    return((ivadmin_ldapgroup*) SvIV(*fetched));
 }
 
-int group_create( SV* self, SV* resp, char* container ) {
+int group_create(SV* self, SV* resp, char* container) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse(resp);
 
@@ -858,41 +855,41 @@ int group_create( SV* self, SV* resp, char* container ) {
 
     unsigned long rc = 0;
 
-    if ( name == NULL )
+    if (name == NULL)
 	croak("group_create: Couldn't retrieve group name");
 
-    if ( dn == NULL )
+    if (dn == NULL)
 	croak("group_create: Couldn't retrieve group dn");
 
-    if ( cn == NULL )
+    if (cn == NULL)
 	croak("group_create: Couldn't retrieve group cn");
 
-    rc = ivadmin_group_create2( *ctx, 
+    rc = ivadmin_group_create2(*ctx, 
 				name, 
 				dn, 
 				cn, 
 				container, 
-				rsp );
+				rsp);
 
     return (rc == IVADMIN_TRUE);
 }
 
-int group_delete( SV* self, SV* resp, unsigned long registry ) {
+int group_delete(SV* self, SV* resp, unsigned long registry) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse(resp);
     char *name = _getname(self);
 
     unsigned long rc = 0;
 
-    if ( name == NULL )
+    if (name == NULL)
 	croak("group_delete: Couldn't retrieve group name");
 
-    rc = ivadmin_group_delete2( *ctx, name, registry, rsp );
+    rc = ivadmin_group_delete2(*ctx, name, registry, rsp);
 
-    return (  rc == IVADMIN_TRUE );
+    return ( rc == IVADMIN_TRUE);
 }
 
-int  group_get( SV* self, SV* resp ) {
+int  group_get(SV* self, SV* resp) {
     ivadmin_context*   ctx   = _getcontext(self);
     ivadmin_ldapgroup* group = _getgroup(self);
     char *name		     = _getname(self);
@@ -911,14 +908,14 @@ int  group_get( SV* self, SV* resp ) {
     if (! group)
 	return IVADMIN_FALSE;
 
-    rc = ivadmin_group_get( *ctx, 
+    rc = ivadmin_group_get(*ctx, 
     			    name, 
 			    group, 
-			    rsp );
+			    rsp);
     return (rc == IVADMIN_TRUE);
 }
 
-int group_getbydn( SV* self, SV* resp ) {
+int group_getbydn(SV* self, SV* resp) {
     ivadmin_context*   ctx   = _getcontext(self);
     ivadmin_ldapgroup* group = _getgroup(self);
     ivadmin_response*  rsp   = _getresponse(resp);
@@ -926,7 +923,7 @@ int group_getbydn( SV* self, SV* resp ) {
     char *dn = _fetch(self,"dn");
     unsigned long rc;
 
-    if ( group == NULL ) {
+    if (group == NULL) {
 	_groupstore(self);
 	group = _getgroup(self);
     }
@@ -934,59 +931,59 @@ int group_getbydn( SV* self, SV* resp ) {
     if (dn == NULL)
 	croak("group_getbydn: Couldn't retrieve group dn");
 
-    rc = ivadmin_group_getbydn( *ctx, 
+    rc = ivadmin_group_getbydn(*ctx, 
     				dn, 
 				group, 
-				rsp );
-    return ( rc == IVADMIN_TRUE );
+				rsp);
+    return (rc == IVADMIN_TRUE);
 }
 
-SV* group_getcn( SV* self ) {
+SV* group_getcn(SV* self) {
     ivadmin_ldapgroup* grp = _getgroup(self);
     char *cn;
 
-    if ( grp == NULL ) 
+    if (grp == NULL) 
 	croak("group_getcn: could not retrieve ivadmin_ldapgroup object");
    
-    cn = (char*)ivadmin_group_getcn( *grp );
-    return( cn ? newSVpv(cn,0) : NULL );
+    cn = (char*)ivadmin_group_getcn(*grp);
+    return(cn ? newSVpv(cn,0) : NULL);
 }
 
-SV* group_getdescription( SV* self ) {
+SV* group_getdescription(SV* self) {
     ivadmin_ldapgroup* grp = _getgroup(self);
     char *desc;
    
-    if ( grp == NULL ) 
+    if (grp == NULL) 
 	croak("group_getdescription: could not retrieve ivadmin_ldapgroup object");
    
-    desc = (char*)ivadmin_group_getdescription( *grp );
+    desc = (char*)ivadmin_group_getdescription(*grp);
 
-    return( desc ? newSVpv(desc,0) : NULL );
+    return(desc ? newSVpv(desc,0) : NULL);
 }
 
-SV* group_getdn( SV* self ) {
+SV* group_getdn(SV* self) {
     ivadmin_ldapgroup* grp = _getgroup(self);
     char *dn;
 
-    if ( grp == NULL ) 
-	croak("group_getdescription: could not retrieve ivadmin_ldapgroup object");
+    if (grp == NULL) 
+	croak("group_getdn: could not retrieve ivadmin_ldapgroup object");
   
     dn = (char*)ivadmin_group_getdn(*grp);
-    return( dn ? newSVpv(dn,0) : NULL );
+    return(dn ? newSVpv(dn,0) : NULL);
 }
 
-SV* group_getname( SV* self ) {
+SV* group_getname(SV* self) {
     ivadmin_ldapgroup* grp = _getgroup(self);
     char *name;
 
-    if ( grp == NULL ) 
-	croak("group_getdescription: could not retrieve ivadmin_ldapgroup object");
+    if (grp == NULL) 
+	croak("group_getname: could not retrieve ivadmin_ldapgroup object");
  
     name = (char*)ivadmin_group_getid(*grp);
-    return( name ? newSVpv(name,0):NULL );
+    return(name ? newSVpv(name,0):NULL);
 }
 
-void group_getmembers( SV* self, SV* resp ) {
+void group_getmembers(SV* self, SV* resp) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse(resp);
     char* name            = _getname(self);
@@ -1003,24 +1000,24 @@ void group_getmembers( SV* self, SV* resp ) {
     Inline_Stack_Vars;
     Inline_Stack_Reset;
 
-    rc = ivadmin_group_getmembers( *ctx,
+    rc = ivadmin_group_getmembers(*ctx,
     				   name,
 				   &count,
 				   &users,
 				   rsp 
-			         );
+			        );
 
-    if ( rc == IVADMIN_TRUE ) {
-	for ( i=0; i < count; i++ ) {
+    if (rc == IVADMIN_TRUE) {
+	for (i=0; i < count; i++) {
 	    Inline_Stack_Push(sv_2mortal(newSVpv(users[i],0)));
-	    ivadmin_free( users[i] );
+	    ivadmin_free(users[i]);
 	}
     }
 
     Inline_Stack_Done;
 }
 
-int group_import( SV* self, SV* resp, char* container ) {
+int group_import(SV* self, SV* resp, char* container) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse(resp);
     char* name	          = _getname(self);
@@ -1032,14 +1029,14 @@ int group_import( SV* self, SV* resp, char* container ) {
     if (name == NULL)
 	croak("group_getmembers: Couldn't retrieve group name");
 
-    if ( dn == NULL )
+    if (dn == NULL)
 	croak("group_import: Couldn't retrieve group dn");
 
-    rc = ivadmin_group_import2( *ctx, name, dn, container, rsp );
-    return ( rc == IVADMIN_TRUE );
+    rc = ivadmin_group_import2(*ctx, name, dn, container, rsp);
+    return (rc == IVADMIN_TRUE);
 }
 
-void group_list( SV* pd, SV* resp, char* pattern, unsigned long maxret ) {
+void group_list(SV* pd, SV* resp, char* pattern, unsigned long maxret) {
     ivadmin_context* ctx  = (ivadmin_context*) SvIV(SvRV(pd));
     ivadmin_response* rsp = _getresponse(resp);
 
@@ -1052,31 +1049,31 @@ void group_list( SV* pd, SV* resp, char* pattern, unsigned long maxret ) {
     Inline_Stack_Vars;
     Inline_Stack_Reset;
 
-    if ( ! strlen( pattern ) ) 
+    if (! strlen(pattern)) 
 	pattern = IVADMIN_ALLPATTERN;
 
-    if ( maxret == 0 ) 
+    if (maxret == 0) 
         maxret = IVADMIN_MAXRETURN;
 
-    rc = ivadmin_group_list( *ctx,
+    rc = ivadmin_group_list(*ctx,
     			     pattern,
 			     maxret,
 			     &count,
 			     &groups,
 			     rsp 
-			    );
+			   );
 
-    if ( rc == IVADMIN_TRUE ) {
-	for ( i=0; i < count; i++ ) {
+    if (rc == IVADMIN_TRUE) {
+	for (i=0; i < count; i++) {
 	    Inline_Stack_Push(sv_2mortal(newSVpv(groups[i],0)));
-	    ivadmin_free( groups[i] );
+	    ivadmin_free(groups[i]);
 	}
     }
     Inline_Stack_Done;
 }
 
-void group_listbydn( SV* pd, SV* resp, char* pattern, 
-		     unsigned long maxret ) {
+void group_listbydn(SV* pd, SV* resp, char* pattern, 
+		     unsigned long maxret) {
     ivadmin_context* ctx  = (ivadmin_context*) SvIV(SvRV(pd));
     ivadmin_response* rsp = _getresponse(resp);
 
@@ -1089,30 +1086,30 @@ void group_listbydn( SV* pd, SV* resp, char* pattern,
     Inline_Stack_Vars;
     Inline_Stack_Reset;
 
-    if ( ! strlen( pattern ) ) 
+    if (! strlen(pattern)) 
 	pattern = IVADMIN_ALLPATTERN;
 
-    if ( maxret == 0 ) 
+    if (maxret == 0) 
         maxret = IVADMIN_MAXRETURN;
 
-    rc = ivadmin_group_listbydn( *ctx,
+    rc = ivadmin_group_listbydn(*ctx,
     				 pattern,
 				 maxret,
 				 &count,
 				 &groups,
 				 rsp 
-			       );
+			      );
 
-    if ( rc == IVADMIN_TRUE ) {
-	for ( i=0; i < count; i++ ) {
+    if (rc == IVADMIN_TRUE) {
+	for (i=0; i < count; i++) {
 	    Inline_Stack_Push(sv_2mortal(newSVpv(groups[i],0)));
-	    ivadmin_free( groups[i] );
+	    ivadmin_free(groups[i]);
 	}
     }
     Inline_Stack_Done;
 }
 
-int group_removemembers( SV* self, SV* resp, AV* users ) {
+int group_removemembers(SV* self, SV* resp, AV* users) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse(resp);
     char *name		  = _getname(self);
@@ -1131,22 +1128,22 @@ int group_removemembers( SV* self, SV* resp, AV* users ) {
     * char**
     */
     count = av_len(users) + 1;
-    Newz( 5, members, count, const char* );
-    for ( i=0; i < count; i++ ) {
+    Newz(5, members, count, const char*);
+    for (i=0; i < count; i++) {
 	elem = av_fetch(users,i,0);
-	members[i] = elem ? (const char*)SvPV_nolen( *elem ) : NULL;
+	members[i] = elem ? (const char*)SvPV_nolen(*elem) : NULL;
     }
 
-    rc = ivadmin_group_removemembers( *ctx,
+    rc = ivadmin_group_removemembers(*ctx,
     				      name,
 				      count,
 				      members,
 				      rsp 
-				    );
-    return ( rc == IVADMIN_TRUE );
+				   );
+    return (rc == IVADMIN_TRUE);
 }
 
-int group_addmembers( SV* self, SV* resp, AV* users ) {
+int group_addmembers(SV* self, SV* resp, AV* users) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse(resp);
     char* name		  = _getname(self);
@@ -1165,22 +1162,22 @@ int group_addmembers( SV* self, SV* resp, AV* users ) {
     * char**
     */
     count = av_len(users) + 1;
-    Newz( 5, members, count, const char* );
-    for ( i=0; i < count; i++ ) {
+    Newz(5, members, count, const char*);
+    for (i=0; i < count; i++) {
 	elem = av_fetch(users,i,0);
-	members[i] = elem ? (const char*)SvPV_nolen( *elem ) : NULL;
+	members[i] = elem ? (const char*)SvPV_nolen(*elem) : NULL;
     }
 
-    rc = ivadmin_group_addmembers( *ctx,
+    rc = ivadmin_group_addmembers(*ctx,
     				   name,
 				   count,
 				   members,
 				   rsp 
-				 );
-    return ( rc == IVADMIN_TRUE );
+				);
+    return (rc == IVADMIN_TRUE);
 }
 
-int group_setdescription( SV* self, SV* resp, char* desc ) {
+int group_setdescription(SV* self, SV* resp, char* desc) {
     ivadmin_context* ctx  = _getcontext(self);
     ivadmin_response* rsp = _getresponse(resp);
     char* name		  = _getname(self);
@@ -1190,20 +1187,20 @@ int group_setdescription( SV* self, SV* resp, char* desc ) {
     if (name == NULL)
 	croak("group_setdescription: Couldn't retrieve group name");
 
-    rc = ivadmin_group_setdescription( *ctx,
+    rc = ivadmin_group_setdescription(*ctx,
     				       name,
 				       desc,
 				       rsp
-				     );
-    return ( rc == IVADMIN_TRUE );
+				    );
+    return (rc == IVADMIN_TRUE);
 }
 
 
-void _groupfree( SV* self ) {
-    ivadmin_ldapgroup* grp = _getgroup( self );
+void _groupfree(SV* self) {
+    ivadmin_ldapgroup* grp = _getgroup(self);
 
-    if ( grp != NULL )
-	Safefree( grp );
+    if (grp != NULL)
+	Safefree(grp);
 
-    hv_delete((HV*)SvRV(self), "_group", 6, 0 );
+    hv_delete((HV*)SvRV(self), "_group", 6, 0);
 }

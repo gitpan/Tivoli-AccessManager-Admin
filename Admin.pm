@@ -14,10 +14,11 @@ use Tivoli::AccessManager::Admin::SSO::Web;
 use Tivoli::AccessManager::Admin::SSO::Group;
 use Tivoli::AccessManager::Admin::SSO::Cred;
 
-$Tivoli::AccessManager::Admin::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::VERSION = '1.10';
 use Inline( C => 'DATA',
-	    VERSION => '1.00',
-	    NAME => 'Tivoli::AccessManager::Admin' );
+	    NAME => 'Tivoli::AccessManager::Admin',
+	    VERSION => '1.10'
+	  );
 
 my %dispatch = ( 
     acl 	=> 'Tivoli::AccessManager::Admin::ACL',
@@ -60,8 +61,7 @@ Tivoli::AccessManager::Admin
 
 =head1 DESCRIPTION
 
-B<Tivoli::AccessManager::Admin> is a convenience module.  You can simply B<use> it and have
-access to:
+B<Tivoli::AccessManager::Admin> is a convenience module.  You can simply B<use> it and have access to:
 
 =over 4
 

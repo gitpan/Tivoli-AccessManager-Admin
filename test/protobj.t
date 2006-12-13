@@ -1,10 +1,11 @@
 #!/usr/bin/perl 
 # vim: set filetype=perl:
+# COVER:ProtObject.pm
 use strict;
 use warnings;
 use Term::ReadKey;
 
-use Test::More tests => 71;
+use Test::More tests => 89;
 use Data::Dumper;
 
 BEGIN {
@@ -161,6 +162,10 @@ $resp = $pobj->policy_attachable($newval);
 is ( $resp->value,  $newval, 'Flipped the attachable flag' ) 
     or diag( $resp->messages );
 
+$resp = $pobj->policy_attachable(silly => $oldval);
+is ($resp->value,$newval,'Ignored a silly parameter')
+    or diag( $resp->messages );
+
 $resp = $pobj->policy_attachable(att => $oldval);
 is ( $resp->value,  $oldval, 'Unflipped the attachable flag' ) 
     or diag( $resp->messages );
@@ -168,6 +173,10 @@ is ( $resp->value,  $oldval, 'Unflipped the attachable flag' )
 print "\nTESTING description\n";
 $resp = $pobj->description(description => "monkey");
 is( $resp->value, 'monkey', "Monkey description" ) or diag( $resp->messages );
+
+$resp = $pobj->description(silly => "monkey");
+is( $resp->value, 'monkey', "Ignored a silly parameter" ) or 
+    diag( $resp->messages );
 
 print "\nTESTING attributes\n";
 my $attr = { crack => ['smoking'], evil => [1] };
@@ -268,6 +277,12 @@ $resp = $obj->type;
 is( $resp->value, 11, "Type is correct" ) 
     or diag( $resp->messages );
 
+$resp = $obj->type( silly => 12 );
+is( $resp->value, 11, "Ignored silly parameter");
+
+$resp = $obj->type( type => 19 );
+is( $resp->isok, 0, "Ignored type > 18");
+
 my $foo = Tivoli::AccessManager::Admin::ProtObject->new( $pd,
 				    name => '/test/horde/monkey1' );
 is($foo->exist, 1, "Cloned me an object") or diag($resp->messages);
@@ -276,16 +291,26 @@ $obj->delete;
 $resp = $obj->delete;
 is($resp->isok, 0, "Couldn't delete it again");
 
+$obj = Tivoli::AccessManager::Admin::ProtObject->new( $pd,
+				name => 'foobar',
+				type => 19 );
+is($obj, undef, "Couldn't create an object with a type > 18");
+
+$obj =  Tivoli::AccessManager::Admin::ProtObject->new( $pd,
+				name => 'foobar');
+
+$resp = $obj->create( type => 19 );
+is($resp->isok, 0, "Couldn't create an object with a type > 18");
 
 print "\nTESTING empty parameter lists\n";
 my $bork = Tivoli::AccessManager::Admin::ProtObject->new;
-is($bork, undef, "Could not call new() with an empty parameter list\n");
+is($bork, undef, "Could not call new() with an empty parameter list");
 
 $resp = Tivoli::AccessManager::Admin::ProtObject->create;
-is($resp->isok, 0, "Could not call create() with an empty parameter list\n");
+is($resp->isok, 0, "Could not call create() with an empty parameter list");
 
 $resp = Tivoli::AccessManager::Admin::ProtObject->find;
-is($resp->isok, 0, "Could not call find() with an empty parameter list\n");
+is($resp->isok, 0, "Could not call find() with an empty parameter list");
 
 print "\nTESTING invalid parameter lists\n";
 $bork = Tivoli::AccessManager::Admin::ProtObject->new( qw/one/ );
@@ -297,10 +322,14 @@ is($bork, undef, "Could not call new() with an odd number of parameters");
 $resp = Tivoli::AccessManager::Admin::ProtObject->create( $pd, qw/two/ );
 is($resp->isok, 0, "Could not call create() with an odd number of parameters");
 
-$resp = Tivoli::AccessManager::Admin::ProtObject->find( $pd, qw/one two/);
-is($resp->isok, 0, "Could not call find() with an invalid parameter list\n");
+$resp = Tivoli::AccessManager::Admin::ProtObject->create( qw/two/ );
+is($resp->isok, 0, "Could not call create() with a non-context object");
 
-$bork = Tivoli::AccessManager::Admin::ProtObject->new( $pd, name => "/test/horde/evilmonkey",
+$resp = Tivoli::AccessManager::Admin::ProtObject->find( $pd, qw/one two/);
+is($resp->isok, 0, "Could not call find() with an invalid parameter list");
+
+$bork = Tivoli::AccessManager::Admin::ProtObject->new( $pd, 
+				      name => "/test/horde/evilmonkey",
 				      type => 11);
 $resp = $bork->type(10);
 is($resp->isok, 0, "Could not set the type of a non-existent object");
@@ -331,19 +360,57 @@ is($resp->isok, 0, "Could not call attributes() with an odd number of parameters
 $resp = $bork->find(qw/one two three/);
 is($resp->isok, 0, "Could not call find() with an odd number of parameters");
 
+$resp = Tivoli::AccessManager::Admin::ProtObject->find(qw/one two three/);
+is($resp->isok, 0, "Could not call find() without a context");
+
 print "\nTESTING evil\n";
 
 $bork->{exist} = 0;
 $resp = $bork->create;
-is($resp->isok, 0, "Evil create() was stopped");
+is($resp->isok, 0, "Could not create evil");
 $bork->{exist} = 1;
 
 $resp = $bork->delete;
 $bork->{exist} = 1;
+
 $resp = $bork->delete;
+is($resp->isok, 0, "Could not delete evil");
 
-is($resp->isok, 0, "Evil delete() was stopped");
+$bork = Tivoli::AccessManager::Admin::ProtObject->new( $pd, 
+				      name => "/test/horde/evilmonkey",
+				      type => 11);
 
+$bork->{exist} = 1;
+
+$resp = $bork->type(10);
+is($resp->isok, 0, "Could not set evil's type");
+
+$resp = $bork->description('evil');
+is($resp->isok, 0, "Could not set evil's description");
+
+$resp = $bork->attributes(add => { evil => 'monkey' });
+is($resp->isok, 0, "Could not add attributes to evil");
+
+$resp = $bork->attributes(remove => { evil => 'monkey' });
+is($resp->isok, 0, "Could not remove attributes from evil");
+
+$resp = $bork->attributes(removekey => 'evil');
+is($resp->isok, 0, "Could not add attributes to evil");
+
+$resp = $bork->attributes(add => { evil => ['monkey'] });
+is($resp->isok, 0, "Could not add attributes to evil, redux");
+
+$resp = $bork->attributes(remove => { evil => ['monkey'] });
+is($resp->isok, 0, "Could not remove attributes from evil, redux");
+
+$resp = $bork->attributes(removekey => ['evil']);
+is($resp->isok, 0, "Could not add attributes to evil, redux");
+
+$resp = $bork->authzrule(attach => '/test/evil/monkey');
+is($resp->isok, 0, "Could not attach evil");
+
+$resp = $bork->authzrule(detach => '/test/evil/monkey');
+is($resp->isok, 0, "Could not detach evil");
 
 END {
     ReadMode 0;

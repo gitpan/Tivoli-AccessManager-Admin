@@ -1,13 +1,13 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::policy;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::policy::VERSION = '1.00';
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
 my %funcs = ( 
     'expiry-date' => [qw/unlimited unset <absolute-time>/],
     'disable-time-interval' => [qw/<seconds> unset disable/],
+    'max-concurrent-web-sessions' => [qw/displace unlimited unset <number>/],
     'max-login-failures' => [qw/<count> unset/],
     'max-age' => [qw/unset <seconds>/],
     'max-repeated-chars' => [qw/<number> unset/],

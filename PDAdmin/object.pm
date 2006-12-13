@@ -3,8 +3,6 @@ use strict;
 use warnings;
 use Text::Wrap;
 
-$Tivoli::AccessManager::PDAdmin::object::VERSION = '1.00';
-
 sub help {
     my $key = shift || '';
     my @help = (

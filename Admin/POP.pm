@@ -4,14 +4,14 @@ use warnings;
 use Carp;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: POP.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: POP.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::POP::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::POP::VERSION = '1.10';
 use Inline( C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 	        NAME => 'Tivoli::AccessManager::Admin::POP',
 	    );
 
@@ -210,17 +210,39 @@ sub delete {
 
 sub attach {
     my $self = shift;
-    return $self->objects( attach => \@_ );
+    my $resp;
+
+    if ( @_ ) {
+	$resp = $self->objects(attach => ref $_[0] ? $_[0] : [@_]);
+    }
+    else {
+	$resp = Tivoli::AccessManager::Admin::Response->new;
+	$resp->set_message("Where am I attaching the pop?");
+	$resp->set_isok(0);
+    }
+    return $resp;
 }
 
 sub detach {
     my $self = shift;
-    return $self->objects( detach => \@_ );
+    my ($resp,$list);
+
+    if ( @_ ) {
+	$list = ref $_[0] ? $_[0] : [@_];
+    }
+    else {
+	$resp = $self->find;
+	return $resp unless $resp->isok;
+	$list = [$resp->value];
+    }
+
+    $resp = $self->objects(detach => $list);
+    return $resp;
 }
 
 sub find {
     my $self = shift;
-    my $resp = Tivoli::AccessManager::Admin::Reponse->new;
+    my $resp = Tivoli::AccessManager::Admin::Response->new;
 
     my @rc = $self->pop_find( $resp );
     $resp->isok and $resp->set_value(\@rc);
@@ -1158,7 +1180,7 @@ address.  The contents of the subhashes look like:
 
 The netmask for the ip address.  It should be requested in the quad-dot format
 (e.g., 255.255.255.0).  I should likely be smart enough to handle CIDR
-notation and what ever IPV6 users, but I am not.
+notation and what ever IPV6 uses, but I am not.
 
 =item AUTHLEVEL =E<gt> <NUMBER>
 
@@ -1178,6 +1200,152 @@ Forbids access from some subnet. The referant of the hash ref
 should look just like it does for adding.
 
 =back
+
+=head3 Returns
+
+An array of hashes that look mostly like the parameter hashes.  For the
+record, I dislike this function.
+
+=head2 qop( [level] )
+
+Sets the "quality of protection" on the POP.
+
+=head3 Parameters
+
+=over 4
+
+=item level
+
+The level of protection, it must be one of these three options: none,
+integrity or privacy.  You will need to refer to the WebSEAL Administration
+Guide for the meaning of those three values.
+
+=back
+
+=head3 Returns
+
+The current level of protection.
+
+=head2 tod ( days =E<gt> [array], start =E<gt> N, end =E<gt> N, reference =E<gt> local | UTC )
+
+Returns the current time of day access policy on the POP.
+
+=head3 Parameters
+
+=over 4
+
+=item days 
+
+B<days> should be a reference to an array containing some combination of:
+  mon, tue, wed, thu, fri, sat, sun or any.
+
+If the word 'any' is found anywhere in the array, it will over ride all the
+others.
+
+=item start
+
+The beginning of the allowed access time, expressed in 24-hour format.  Since
+perl will try to interpret any number starting with a 0 as an octal number (
+leading to annoying problems with 09xx ), you need to either drop the
+preceding 0 ( eg, 900 ) or specify it as a string ( '0900' ).
+
+=item end
+
+The end of the allowed access time.  See the previous item for the caveats.
+
+=item UTC|local
+
+Under the covers, start and end are calculated as minutes past midnight.  TAM
+needs to know if you are referencing midnight UTC or midnight local time.  The
+default is 'local'.
+
+=back
+
+=head3 Returns
+
+A L<Tivoli::AccessManager::Admin::Response> object, the value of which is a hash with the
+key/value pairs:
+
+=over 4
+
+=item days
+
+An array reference to the days for which the policy is enforced.  If the TOD
+policy is unset, this refers to an empty array.
+
+=item start
+
+The time of day when access is allowed, expressed in 24-hour format. If the TOD
+policy is unset, this will be zero.
+
+
+=item end
+
+The time of day when access is denied, expressed in 24-hour format. If the TOD
+policy is unset, this will be zero.
+
+=item reference
+
+UTC or local.  If the policy is unset, this will be local.
+
+=head2 warnmode([0|1])
+
+Sets the warnmode on the POP.
+
+=head3 Parameters
+
+=over 4
+
+=item O | 1
+
+Disble or enable the warn mode.
+
+=back
+
+=head3 Returns
+
+The current value
+
+=head2 attributes([add => { attribute => value },][remove => { attribute => value },][removekey => attribute])
+
+Adds keys and attributes to the POP, removes values from an attribute and
+removes a key.
+
+=head3 Parameters
+
+=over 4
+
+=item add => { attribute => value[,...] }
+
+An anonymous hash pointing to the attributes and the value(s) for that
+attribute.  If you want to set more than one value on the attribute, it must
+be sent as an anonymous array.
+
+If the attribute does not already exist, it will be created.
+
+=item remove => { attribute => value[,...] }
+
+Removes the value(s) from the named attribute(s).  If you are removing
+multiple values from an attribute, you must use an anonymous array.  Note,
+this will not remove the attribute, only values from the attribute.
+
+=item removekey => value[,...]
+
+Removes attributes from the POP.  As always, if you want to remove multiple
+attributes, you need to use an anonymous array.
+
+=back
+
+=head3 Returns
+
+A hash containing the defined attributes as the keys and the values.  All of
+the values are returned as anonymous arrays.
+
+=head2 exist
+
+Returns true if the POP exists, false otherwise.
+
+=back 
 
 =cut
 

@@ -8,12 +8,12 @@ use Data::Dumper;
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # $Id$
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::SSO::Group::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::SSO::Group::VERSION = '1.10';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME => 'Tivoli::AccessManager::Admin::SSO::Group',
 	   );
 
@@ -188,7 +188,6 @@ sub resources {
 	    }
 	}
 	$resp = $self->get;
-	return $resp unless $resp->isok;
     }
 
     @resources = $self->ssogroup_getresources();

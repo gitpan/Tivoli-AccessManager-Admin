@@ -1,9 +1,8 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::pop;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::pop::VERSION = '1.00';
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
 sub _listPOP {
     my ($tam,$word) = @_;

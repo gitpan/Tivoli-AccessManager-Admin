@@ -1,9 +1,8 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::authzrule;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::authzrule::VERSION = '1.00';
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
 sub _listAuthz {
     my ($tam, $word) = @_;

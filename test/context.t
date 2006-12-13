@@ -1,9 +1,10 @@
 #!/usr/bin/perl
 # vim: set filetype=perl:
+# COVER:Context.pm
 use strict;
 use warnings;
 use Term::ReadKey;
-use Test::More tests => 79;
+use Test::More tests => 97;
 
 BEGIN {
     use_ok('Tivoli::AccessManager::Admin');
@@ -31,13 +32,16 @@ is( $resp->value ,'unlimited', "Setting expiration date to 'unlimited'" );
 
 my $secs = time + (86400*2);
 $resp = $pd->accexpdate($secs); 
-ok( $resp->value == $secs, "Setting expiration date two days from now" );
+is( $resp->value, $secs, "Setting expiration date two days from now" );
 
 $resp = $pd->accexpdate( lifetime => $oldvalue );
 is( $resp->value ,$oldvalue , "Restoring accexpdate:$oldvalue");
 
-$resp = $pd->accexpdate( sillybastard => $oldvalue );
+$resp = $pd->accexpdate( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->accexpdate('silly');
+is($resp->isok,0,"Invalid parameter value gave an error");
 
 print "\nTESTING disabletimeint\n";
 $resp = $pd->disabletimeint();
@@ -53,13 +57,16 @@ is( $resp->value ,'disabled', "Setting disable time interval to 'disable'" );
 
 $secs = 3600;
 $resp = $pd->disabletimeint( $secs ); 
-ok( $resp->value == $secs, "Setting disable time interval to 3600 seconds" );
+is( $resp->value, $secs, "Setting disable time interval to 3600 seconds" );
 
 $resp = $pd->disabletimeint( seconds => $oldvalue );
 is( $resp->value ,$oldvalue, "Restoring disabletimeint: $oldvalue" );
 
-$resp = $pd->disabletimeint( sillybastard => $oldvalue );
+$resp = $pd->disabletimeint( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->disabletimeint('silly');
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING maxlgnfails\n";
 $resp = $pd->maxlgnfails();
@@ -70,13 +77,16 @@ $resp = $pd->maxlgnfails( 'unset' );
 is( $resp->value , 'unset', "Setting max login failures to 'unset'" );
 
 $resp = $pd->maxlgnfails( 5 );
-ok( $resp->value == 5, "Setting max login failures to 5" );
+is( $resp->value, 5, "Setting max login failures to 5" );
 
 $resp = $pd->maxlgnfails( failures => $oldvalue );
 is( $resp->value ,$oldvalue, "Restoring maxlgnfails: $oldvalue" );
 
-$resp = $pd->maxlgnfails( sillybastard => $oldvalue );
+$resp = $pd->maxlgnfails( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->maxlgnfails( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING maxpwdage\n";
 $resp = $pd->maxpwdage();
@@ -93,8 +103,11 @@ ok( $resp->value == $secs, "Setting max password age to 30 days" );
 $resp = $pd->maxpwdage( seconds => $oldvalue );
 is( $resp->value ,$oldvalue, "Restoring maxpwdage: $oldvalue" );
 
-$resp = $pd->maxpwdage( sillybastard => $oldvalue );
+$resp = $pd->maxpwdage( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->maxpwdage( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING maxpwdrepchars\n";
 $resp = $pd->maxpwdrepchars();
@@ -109,8 +122,11 @@ ok( $resp->value == 5, "Setting max password repeat chars to 5" );
 $resp = $pd->maxpwdrepchars( chars => $oldvalue );
 is( $resp->value ,$oldvalue, "Restoring maxpwdrepchars: $oldvalue" );
 
-$resp = $pd->maxpwdrepchars( sillybastard => $oldvalue );
+$resp = $pd->maxpwdrepchars( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->maxpwdrepchars( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING minpwdalphas\n";
 $resp = $pd->minpwdalphas();
@@ -126,9 +142,11 @@ ok( $resp->value == 5 , "Setting min password alphas to 5" );
 $resp = $pd->minpwdalphas( chars => $oldvalue );
 is( $resp->value ,$oldvalue,"Restoring minpwdalphas: $oldvalue"  );
 
-$resp = $pd->minpwdalphas( sillybastard => $oldvalue );
+$resp = $pd->minpwdalphas( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
 
+$resp = $pd->minpwdalphas( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING minpwdnonalphas\n";
 $resp = $pd->minpwdnonalphas();
@@ -145,9 +163,11 @@ ok( $resp->value == 5, "Setting min password nonalphas to 5" );
 $resp = $pd->minpwdnonalphas( chars => $oldvalue );
 is( $resp->value ,$oldvalue, "Restoring minpwdnonalphas: $oldvalue" );
 
-$resp = $pd->minpwdnonalphas( sillybastard => $oldvalue );
+$resp = $pd->minpwdnonalphas( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
 
+$resp = $pd->minpwdnonalphas( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING minpwdlen\n";
 $resp = $pd->minpwdlen();
@@ -156,7 +176,7 @@ ok( ($oldvalue =~ /^\d+$/ or $oldvalue eq 'unset'),
     "Storing minpwdlen: $oldvalue" );
 
 $resp = $pd->minpwdlen( 'unset' );
-is( $resp->value , 'unset' , "Setting min password length to 'unset'" );
+is( $resp->value , 'unset' , "Setting min password length to 'unset'" ) or diag($resp->messages);
 
 $resp = $pd->minpwdlen( 5 );
 ok( $resp->value == 5 , "Setting min password length to 5" );
@@ -164,8 +184,11 @@ ok( $resp->value == 5 , "Setting min password length to 5" );
 $resp = $pd->minpwdlen( chars => $oldvalue );
 is( $resp->value ,$oldvalue, "Restoring minpwdlen: $oldvalue" );
 
-$resp = $pd->minpwdlen( sillybastard => $oldvalue );
+$resp = $pd->minpwdlen( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->minpwdlen( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING pwdspaces\n";
 $resp = $pd->pwdspaces();
@@ -182,8 +205,39 @@ ok( $resp->value  == 1, "Setting password spaces to 'allowed'" );
 $resp = $pd->pwdspaces( allowed => $oldvalue );
 is( $resp->value ,$oldvalue, "Restoring pwdspaces: $oldvalue" );
 
-$resp = $pd->pwdspaces( sillybastard => $oldvalue );
+$resp = $pd->pwdspaces( silly => $oldvalue );
 is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->pwdspaces( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
+
+print "\nTESTING max_concur_session\n";
+my @states = qw/unset unlimited displace/;
+
+$resp = $pd->max_concur_session();
+$oldvalue = $resp->value;
+ok( ($oldvalue =~ /^\d+$/ or grep($oldvalue, @states)), "Storing max_concur_session: $oldvalue");
+
+$resp = $pd->max_concur_session('unset');
+is( $resp->value , 'unset' , "Setting max_concur_session spaces to 'unset'" );
+
+$resp = $pd->max_concur_session('unlimited');
+is( $resp->value , 'unlimited' , "Setting max_concur_session spaces to 'unlimited'" );
+
+$resp = $pd->max_concur_session('displace');
+is( $resp->value , 'displace' , "Setting max_concur_session spaces to 'displace'" );
+
+$resp = $pd->max_concur_session( 20 );
+is( $resp->value, 20, "Setting max_concur_session spaces to '20'" );
+
+$resp = $pd->max_concur_session( session => $oldvalue );
+is( $resp->value ,$oldvalue, "Restoring pwdspaces: $oldvalue" );
+
+$resp = $pd->max_concur_session( silly => $oldvalue );
+is( $resp->value ,$oldvalue , "Hash call gone bad ... worked?" );
+
+$resp = $pd->max_concur_session( 'silly' );
+is($resp->isok,0,"Invalid parameter generated an error");
 
 print "\nTESTING tod\n";
 $resp = $pd->tod();
@@ -233,7 +287,7 @@ ok( ( $resp->value eq "UTF8" or $resp->value eq "LOCAL" ), $resp->value . " code
 
 print "\nTESTING invalid logins\n";
 my $mikfire = Tivoli::AccessManager::Admin::Context->new( userid   => 'mik', 
-					password => 'foobard!',
+					password => 'passw0rd',
 					domain   => 'Default' );
 
 isa_ok( $mikfire, 'Tivoli::AccessManager::Admin::Context', "Created a context") 
@@ -252,8 +306,9 @@ is( $mikfire, undef, "Sending null password failed" );
 $mikfire = undef;  # Destroy the context
 
 print "\nTESTING the hard way\n";
-$mikfire = Tivoli::AccessManager::Admin::Context->new( userid   => 'sec_master', 
-				     password => $pswd,
+$mikfire = Tivoli::AccessManager::Admin::Context->new( 
+				     userid   => 'sec_master', 
+				     password => '4nd3rson',
 				     domain   => 'Default',
 				     codeset  => 'local',
 				     server   => 'gir',
@@ -267,7 +322,7 @@ ok( ($resp->value =~ /^\d+$/ or $resp->value eq 'unset'), "Context is valid") or
 
 
 $mikfire = Tivoli::AccessManager::Admin::Context->new( userid   => 'mikfire', 
-				     password => 'foobard!',
+				     password => 'foobard',
 				     domain   => 'Default',
 				     codeset  => 'local',
 				     server   => 'gir',
@@ -287,7 +342,7 @@ isa_ok( $loc, 'Tivoli::AccessManager::Admin::Context', "Created local context wi
 
 print "\nTESTING breakage\n";
 $mikfire = Tivoli::AccessManager::Admin::Context->new( userid   => 'mik', 
-				     password => 'foobard!',
+				     password => 'passw0rd',
 				   );
 
 $resp = $mikfire->accexpdate( 1000, 1000, 1000 );
@@ -316,6 +371,9 @@ is($resp->isok, 0, "Odd number of elements in the call to minpwdlen failed");
 
 $resp = $mikfire->pwdspaces( 1000, 1000, 1000 );
 is($resp->isok, 0, "Odd number of elements in the call to pwdspaces failed");
+
+$resp = $mikfire->max_concur_session( 1000, 1000, 1000 );
+is($resp->isok, 0, "Odd number of elements in the call to max_concur_session failed");
 
 $resp = $mikfire->tod(1000);
 is($resp->isok, 0, "Odd number of elements in the call to tod failed");

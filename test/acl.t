@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 # vim: set filetype=perl:
+# COVER:ACL.pm
 use strict;
 use warnings;
 use Term::ReadKey;

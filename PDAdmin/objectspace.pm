@@ -2,7 +2,6 @@ package Tivoli::AccessManager::PDAdmin::objectspace;
 use strict;
 use warnings;
 
-$Tivoli::AccessManager::PDAdmin::objectspace::VERSION = '1.00';
 sub help {
     my $key = shift || '';
     my @help = (

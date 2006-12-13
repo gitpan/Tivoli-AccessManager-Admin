@@ -6,32 +6,42 @@ use Data::Dumper;
 use Tivoli::AccessManager::Admin::Response;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: Server.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: Server.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::Server::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::Server::VERSION = '1.10';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lpdmgrapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME => 'Tivoli::AccessManager::Admin::Server',
 	   );
 
 sub new {
     my $class = shift;
     my $cont = shift;
-    unless ( defined($cont) and UNIVERSAL::isa($cont,'Tivoli::AccessManager::Admin::Context' ) ) {
+    my $name = "";
+    unless (defined($cont) and UNIVERSAL::isa($cont,'Tivoli::AccessManager::Admin::Context')) {
 	warn "Incorrect syntax -- did you forget the context?\n";
 	return undef;
     }
 
+    if (@_ == 1) {
+	$name = shift;
+    }
+    elsif (@_ % 2) {
+	warn "Invalid syntax for new\n";
+	return undef;
+    }
+    elsif (@_) {
+	my %opts = @_;
+	$name = $opts{name} || '';
+    }
+
     my $self  = bless {}, $class;
-    my %opts  = @_;
 
     $self->{context} = $cont;
-    $self->{name}    = $opts{name} || '';
-    $self->{type}    = $opts{type} || 0;
-    $self->{desc}    = $opts{description} || '';
+    $self->{name}    = $name;
 
     return $self;
 }
@@ -78,7 +88,19 @@ sub task {
 
     if ($task) {
 	my $rc = $self->server_performtask($resp,$task);
-	$resp->set_value(split("\n",$rc)) if $resp->isok;
+	if ($resp->isok) {
+	    my @temp = split("\n",$rc);
+	    for (@temp) {
+		chomp;
+		s/^\s*//;
+		s/\s*$//;
+	    }
+	    $resp->set_value(\@temp);
+	}
+    }
+    else {
+	$resp->set_isok(0);
+	$resp->set_message("Cannot perform a nameless task");
     }
     return $resp;
 }
@@ -97,14 +119,14 @@ sub list {
     }
     else {
 	$tam = shift;
-	unless ( defined($tam) and UNIVERSAL::isa($tam,'Tivoli::AccessManager::Admin::Context' ) ) {
+	unless (defined($tam) and UNIVERSAL::isa($tam,'Tivoli::AccessManager::Admin::Context' ) ) {
 	    $resp->set_message("Incorrect syntax -- did you forget the context?");
 	    $resp->set_isok(0);
 	    return $resp;
 	}
     }
 
-    $grp = Tivoli::AccessManager::Admin::Group->new( $tam, name => 'remote-acl-users' );
+    $grp = Tivoli::AccessManager::Admin::Group->new($tam,name => 'remote-acl-users');
     $resp = $grp->members;
     return $resp unless $resp->isok;
 
@@ -119,8 +141,200 @@ sub list {
     return $resp;
 }
 
+sub name {
+    my $self = shift;
+    my $resp = Tivoli::AccessManager::Admin::Response->new;
+    my $name = "";
+
+    if (@_ == 1) {
+	$name = shift;
+    }
+    elsif (@_ % 2) {
+	$resp->set_message("Invalid syntax for name");
+	$resp->set_isok(0);
+	return $resp;
+    }
+    elsif (@_) {
+	my %opts = @_;
+	$name = $opts{name} || '';
+    }
+
+    $self->{name} = $name if $name;
+
+    $resp->set_value($self->{name});
+    return $resp;
+}
+
 
 1;
+
+=head1 NAME
+
+Tivoli::AccessManager::Admin::Server
+
+=head1 SYNOPSIS
+
+  my $tam = Tivoli::AccessManager::Admin->new(password => 'N3ew0nk');
+  my($server, $resp);
+
+  # Lets see what servers are defined
+  $resp = Tivoli::AccessManager::Admin::Server->list($tam);
+
+  # Lets find a webSEAL
+  my $wseal;
+  for ($resp->value) {
+      if (/webseal/) {
+          $wseal = $_;
+	  last;
+      }
+  }
+
+  $server = Tivoli::AccessManager::Admin::Server->new($tam,$wseal);
+
+  # Get a list of tasks from the webSEAL
+  $resp = $server->tasklist;
+
+  # Execute a task
+  $resp = $server->task("list");
+
+=head1 DESCRIPTION
+
+L<Tivoli::AccessManager::Admin::Server> implements the server access portion
+of the TAM API.  This basically means any pdadmin command that starts with the
+word "server".
+
+=head1 CONSTRUCTOR
+
+=head2 new(PDADMIN[, NAME])
+
+Creates a blessed L<Tivoli::AccessManager::Admin::Server> object.  As you may
+well expect, you will need to destroy the object if you want to change the
+context.
+
+=head3 Parameters
+
+=over 4
+
+=item PDADMIN
+
+An initialized L<Tivoli::AccessManager::Admin::Context> object.  This is the only required
+parameter.
+
+=item NAME
+
+The servers's name.  This is technically not required, but you need to define
+the name before you can use L</"tasklist"> or L</"task">.
+
+=back
+
+=head3 Returns
+
+A blessed L<Tivoli::AccessManager::Admin::Server> as long as you provide a
+valid context.  It will warn and return undef otherwise.
+
+=head1 CLASS METHODS
+
+=head2 list
+
+Lists all servers.  This method is something of a hack.  TAM does not expose a
+server list function to the C API.  This method actually uses the membership
+list of the remote-acl-users group.  It isn't great, but it should work.
+
+=head3 Parameters
+
+None.
+
+=head3 Returns
+
+Hopefully, a list of all the defined servers buried in a
+L<Tivoli::AccessManager::Admin::Response> object.  There may be some extra
+values in there, but you shouldn't be adding your own stuff to
+remove-acl-users anyway.  
+
+=head1 METHODS
+
+All methods return a L<Tivoli::AccessManager::Admin::Response> object.  See
+the documentation for that module to get the actual values out.
+
+=head2 task(COMMAND)
+
+Executes the named command on the server.
+
+=head3 Parameters
+
+=over 4
+
+=item COMMAND
+
+The command to execute.  This parameter is required.
+
+=back
+
+=head3 Returns
+
+An array containing the results of the command.  The API is a little weird in
+this, but it makes some sense.  The API actually returns everything as one
+string, separated by newlines.  I split this string on newlines to generate an
+array.  It isn't pretty, but that is the way it works.
+
+An invalid or missing command will generate an error.
+
+=head2 tasklist
+
+Gets a list of all the tasks defined on the server.
+
+=head3 Parameters
+
+None.
+
+=head3 Returns
+
+An array containing the output.  See the discussion in L</"task"> for more
+information.
+
+=head2 name([NAME])
+
+Gets or sets the server's name.
+
+=head3 Parameters
+
+=over 4
+
+=item NAME
+
+The new name.  This parameter is optional.
+
+=back
+
+=head3 Returns
+
+The name of the server, buried in a L<Tivoli::AccessManager::Admin::Response>
+object.
+
+=head1 ACKNOWLEDGEMENTS
+
+See L<Tivoli::AccessManager::Admin> for the list.  This was not possible without the help of a
+bunch of people smarter than I.
+
+=head1 BUGS
+
+I would really like a server list and server info function exposed to the C
+API.  Like what Java has.  This isn't my bug.
+
+=head1 AUTHOR
+
+Mik Firestone E<lt>mikfire@gmail.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2006-2013 Mik Firestone.  All rights reserved.  This program is
+free software; you can redistibute it and/or modify it under the same terms as
+Perl itself.
+
+All references to TAM, Tivoli Access Manager, etc are copyrighted, trademarked
+and otherwise patented by IBM.
+
+=cut
 
 __DATA__
 __C__

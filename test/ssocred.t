@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 # vim: set filetype=perl:
+# COVER:SSO/Cred.pm
 use strict;
 use warnings;
 use Term::ReadKey;
 use Data::Dumper;
 
-use Test::More qw/no_plan/;
+use Test::More tests => 59;
 use Tivoli::AccessManager::Admin;
 
 BEGIN {
@@ -94,8 +95,7 @@ $sso = Tivoli::AccessManager::Admin::SSO::Cred->new( $pd,
 				    ssouid => 'mikfire',
 				);
 isa_ok($sso, "Tivoli::AccessManager::Admin::SSO::Cred");
-$resp = $sso->create( 
-		       ssopwd => 'pa$$w0rd' );
+$resp = $sso->create( ssopwd => 'pa$$w0rd' );
 is($resp->isok,1,"Created a sso, sending ssopwd to create");
 $resp = $sso->delete;
 
@@ -121,7 +121,35 @@ $resp = Tivoli::AccessManager::Admin::SSO::Cred->create( $pd,
 is($resp->isok,1,"Used create as a class method");
 $sso = $resp->value;
 isa_ok($sso, "Tivoli::AccessManager::Admin::SSO::Cred");
+$resp = $sso->delete;
 
+$resp = Tivoli::AccessManager::Admin::SSO::Group->create($pd,name => 'chimchim',description => 'test');
+is($resp->isok, 1, "Created group credential") or diag($resp->messages);
+
+my $gso = $resp->value;
+
+$resp = Tivoli::AccessManager::Admin::SSO::Cred->create($pd,
+				      resource => 'chimchim',
+				      uid      => 'mik',
+				      ssouid => 'mikfire',
+				      ssopwd   => 'n33wonk',
+				  );
+is($resp->isok, 1, "Created credential in group") or diag($resp->messages);
+
+$sso = $resp->value;
+is($sso->type->value,'group', "Created a group credential");
+$gso->delete;
+$sso->delete;
+
+$resp = Tivoli::AccessManager::Admin::SSO::Cred->create( $pd,
+				    resource => 'fred',
+				    uid  => 'mik',
+				    type => 'web',
+				    ssouid => 'mikfire',
+				    ssopwd => 'pa$$w0rd',
+				  ); 
+is($resp->isok,1,"Used create as a class method");
+$sso = $resp->value;
 print "\nTESTING get/set calls\n";
 
 # NAME
@@ -206,6 +234,9 @@ is($resp->isok, 0, "Could not call list with an odd number of parameters");
 $resp = Tivoli::AccessManager::Admin::SSO::Cred->list($pd,foobar => 'derf');
 is($resp->isok, 0, "Ignored an invalid hash key");
 
+$resp = Tivoli::AccessManager::Admin::SSO::Cred->list($pd,uid => 'derf');
+is($resp->isok, 0, "Ignored an invalid user id");
+
 $resp = $sso->delete;
 $resp = $sso->delete;
 is($resp->iswarning,1,'Could not delete an already deleted cred');
@@ -223,6 +254,7 @@ is($sso, undef, 'Could not call new with a non-context ');
 $sso = Tivoli::AccessManager::Admin::SSO::Cred->new($pd, qw/one two three/);
 is($sso, undef, 'Could not call new with an odd number of parameters');
 
+
 #create
 $resp = Tivoli::AccessManager::Admin::SSO::Cred->create();
 is($resp->isok, 0, 'Could not call create with an empty paramter list');
@@ -235,18 +267,51 @@ $resp = Tivoli::AccessManager::Admin::SSO::Cred->create($pd,
 				      uid      => 'mik',
 				      ssouid   => 'foobar',
 				  );
-is($resp->isok, 0, 'Could not create with out a ssopwd');
+is($resp->isok, 0, 'Could not create without a ssopwd');
 
 $resp = Tivoli::AccessManager::Admin::SSO::Cred->create($pd,
 				      ssopwd   => 'n33wonk',
 				      uid      => 'mik',
 				      ssouid   => 'foobar',
 				  );
-is($resp->isok, 0, 'Could not create with out a resource');
+is($resp->isok, 0, 'Could not create without a resource');
 
 $resp = Tivoli::AccessManager::Admin::SSO::Cred->create($pd,
 				      resource => 'fred',
 				      uid      => 'mik',
 				      ssopwd   => 'n33wonk',
 				  );
-is($resp->isok, 0, 'Could not create with out a ssouid');
+is($resp->isok, 0, 'Could not create without a ssouid');
+
+$resp = Tivoli::AccessManager::Admin::SSO::Cred->list;
+is($resp->isok, 0, 'Could not list with an empty call list');
+
+$resp = Tivoli::AccessManager::Admin::SSO::Cred->list('one');
+is($resp->isok, 0, 'Could not list with an non-context object');
+
+print "\nTESTING evil\n";
+$resp = Tivoli::AccessManager::Admin::SSO::Cred->create( $pd,
+				    resource => 'fred',
+				    uid  => 'mik',
+				    ssouid => 'mikfire',
+				    ssopwd => 'pa$$w0rd',
+				  ); 
+$sso = $resp->value;
+$sso->{exist} = 0;
+$resp = $sso->create;
+is($resp->isok,0,"Could not create evil");
+
+$sso->{exist} = 1;
+$sso->delete;
+$sso->{exist} = 1;
+$resp = $sso->delete;
+is($resp->isok,0,"Could not delete evil");
+
+$resp = $sso->ssopwd('fw00p!');
+is($resp->isok,0,"Could not set evil's SSO password");
+
+$resp = $sso->ssouid('mojo');
+is($resp->isok,0,"Could not set evil's SSO userid");
+
+print "\nCleaning up\n";
+$web->delete;

@@ -1,4 +1,3 @@
-TODO
 test/ssocred.t
 test/domain.t
 test/authzrule.t
@@ -10,7 +9,9 @@ test/action.t
 test/group.t
 test/user.t
 test/ssogroup.t
+test/server.t
 test/ssoweb.t
+test/objectspace.t
 test/protobj.t
 Admin/SSO/Group.pm
 Admin/SSO/Web.pm
@@ -71,5 +72,7 @@ examples/create_test.pl
 examples/valid_test.pl
 examples/list_test.pl
 MANIFEST
+CHANGES
 Makefile.PL
+cover.tgz
 META.yml                                 Module meta-data (added by MakeMaker)

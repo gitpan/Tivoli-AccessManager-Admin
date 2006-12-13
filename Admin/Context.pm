@@ -4,14 +4,14 @@ use warnings;
 use Carp;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: Context.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: Context.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::Context::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::Context::VERSION = '1.10';
 use Inline( C => 'DATA',
                 INC  => '-I/opt/PolicyDirector/include',
 		LIBS => '-lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME   => 'Tivoli::AccessManager::Admin::Context');
 use Tivoli::AccessManager::Admin::Response;
 
@@ -139,10 +139,16 @@ sub accexpdate {
 	    $unlimited = 0;
 	    $unset   = 0;
 	}
+	elsif ( $lifetime eq 'unlimited' ) {
+	    ($unlimited,$unset,$lifetime) = (1,0,0);
+	}
+	elsif ( $lifetime eq 'unset' ) {
+	    ($unlimited,$unset,$lifetime) = (0,1,0);
+	}
 	else {
-	    $unlimited = $lifetime eq 'unlimited';
-	    $unset   = $lifetime eq 'unset';
-	    $lifetime = 0;
+	    $resp->set_message("The parameter must either be an integer, 'unset' or 'unlimited'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->context_setaccexpdate( $resp,
 					    $lifetime,
@@ -183,10 +189,16 @@ sub disabletimeint {
 	    $disable = 0;
 	    $unset   = 0;
 	}
+	elsif ($seconds eq 'disable') {
+	    ($disable,$unset,$seconds) = (1,0,0);
+	}
+	elsif ($seconds eq 'unset') {
+	    ($disable,$unset,$seconds) = (0,1,0);
+	}
 	else {
-	    $disable = $seconds eq 'disable';
-	    $unset   = $seconds eq 'unset';
-	    $seconds = 0;
+	    $resp->set_message("The parameter must either be an integer, 'disable' or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 
 	$rc = $self->context_setdisabletimeint( $resp,
@@ -228,9 +240,14 @@ sub maxlgnfails {
 	if ( $failures =~ /^\d+$/ ) {
 	    $unset   = 0;
 	}
-	else {
+	elsif ($failures eq 'unset') {
 	    $failures = 0;
 	    $unset   = 1;
+	}
+	else {
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 
 	$rc = $self->context_setmaxlgnfails( $resp,
@@ -271,9 +288,14 @@ sub maxpwdage {
 	if ( $seconds =~ /^\d+$/ ) {
 	    $unset   = 0;
 	}
-	else {
+	elsif ($seconds eq 'unset') {
 	    $seconds = 0;
 	    $unset   = 1;
+	}
+	else {
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	
 	$rc = $self->context_setmaxpwdage( $resp,
@@ -312,11 +334,16 @@ sub maxpwdrepchars {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars = 0;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 0;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->context_setmaxpwdrepchars( $resp,
 						$chars,
@@ -353,11 +380,16 @@ sub minpwdalphas {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars = 0;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 0;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->context_setminpwdalphas( $resp,
 					      $chars,
@@ -395,11 +427,16 @@ sub minpwdnonalphas {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars = 0;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 0;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->context_setminpwdnonalphas( $resp,
 						 $chars,
@@ -438,11 +475,16 @@ sub minpwdlen {
 
     if ( $chars ) {
 	if ( $chars =~ /^\d+$/ ) {
-	    $unset = 0;
+	    $unset   = 0;
+	}
+	elsif ($chars eq 'unset') {
+	    $chars   = 8;
+	    $unset   = 1;
 	}
 	else {
-	    $chars = 1;
-	    $unset = 1;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 	$rc = $self->context_setminpwdlen( $resp,
 					   $chars,
@@ -452,6 +494,77 @@ sub minpwdlen {
     if ( $resp->isok ) {
 	($chars,$unset) = $self->context_getminpwdlen( $resp );
 	$resp->set_value($unset ? "unset" : $chars);
+    }
+
+    return $resp;
+}
+
+sub max_concur_session {
+    my $self = shift;
+    my $resp = Tivoli::AccessManager::Admin::Response->new();
+    my ($session,$unset,$unlimited,$displace,$rc);
+
+    if ( @_ == 1 ) {
+	$session = shift;
+    }
+    elsif ( @_ % 2 ) {
+	$resp->set_message("Invalid syntax");
+	$resp->set_isok(0);
+	return $resp;
+    }
+    elsif ( @_ ) {
+	my %opts = @_;
+	$session = $opts{session} || '';
+    }
+    else {
+	$session = '';
+    }
+
+    if ( $session ) {
+	if ( $session =~ /^\d+$/ ) {
+	    ($unset,$unlimited,$displace) = (0,0,0);
+	}
+	elsif ($session eq 'displace') {
+	    ($session,$unset,$unlimited,$displace) = (0,0,0,1);
+	}
+	elsif ($session eq 'unlimited') {
+	    ($session,$unset,$unlimited,$displace) = (0,0,1,0);
+	}
+	elsif ($session eq 'unset') {
+	    ($session,$unset,$unlimited,$displace) = (0,1,0,0);
+	}
+	else {
+	    $resp->set_message("The parameter must be either an integers, 'displace', 'unlimited' or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
+	}
+
+	$rc = $self->context_setmaxconcurwebsess( $resp,
+						  $session,
+						  $displace,
+						  $unlimited,
+						  $unset,
+						 );
+	$resp->set_value($rc);
+	
+    }
+    if ( $resp->isok ) {
+	my $retval;
+	($session,$displace,$unlimited,$unset) = $self->context_getmaxconcurwebsess( $resp );
+
+	if ($unset) {
+	    $retval = 'unset';
+	}
+	elsif ($displace) {
+	    $retval = 'displace';
+	}
+	elsif ($unlimited) {
+	    $retval = 'unlimited';
+	}
+	else {
+	    $retval = $session;
+	}
+	$resp->set_value($retval);
     }
 
     return $resp;
@@ -479,12 +592,17 @@ sub pwdspaces {
     }
 
     if ( $allowed ) {
-	if ( $allowed eq 'unset' ) {
+	if ( $allowed =~ /^\d+$/ ) {
+	    $unset = 0;
+	}
+	elsif ( $allowed eq 'unset' ) {
 	    $allowed = 0;
 	    $unset   = 1;
 	}
 	else {
-	    $unset   = 0;
+	    $resp->set_message("The parameter must either be an integer or 'unset'");
+	    $resp->set_isok(0);
+	    return $resp;
 	}
 
 	$rc = $self->context_setpwdspaces( $resp,
@@ -860,6 +978,26 @@ Whether or not to allows spaces in passwords.
 
 "unset" or 'allowed'.
 
+=head2 max_concur_session(['displace'|'unlimited'|'unset'|NUM])
+
+Returns or sets the current maximum concurrent web sessions allowed.
+
+=head3 Parameters
+
+=over 4
+
+=item 'displace'|'unlimited'|'unset'|NUM
+
+'unlimited' or 'unset' will disable the policy; NUM will set the maximum
+allowed sessions; and 'displace' will cause the new session to replace the
+old.
+
+=back
+
+=head3 Returns
+
+The current setting.
+
 =head2 tod( days =E<gt> 'unset' ) 
 
 =head2 tod ( days =E<gt> [array], start =E<gt> N, end =E<gt> N, reference =E<gt> local | UTC )
@@ -926,6 +1064,8 @@ policy is unset, this will be zero.
 UTC or local.  If the policy is unset, this will be local.
 
 =back 
+
+
 
 The following methods are all read-only.  I will not bother to say that again,
 nor will you see any of the usual 'Parameter' or 'Returns' headings - the
@@ -1417,6 +1557,37 @@ int context_getuserreg( SV* cont, SV* resp ) {
     	    ( registry == IVADMIN_CONTEXT_LDAPUSERREG ));
 } 
 
+void context_getmaxconcurwebsess(SV *cont, SV* resp) {
+    ivadmin_context* ctx = (ivadmin_context*)SvIV(SvRV(cont));
+    ivadmin_response* rsp = _getresponse( resp );
+
+    unsigned long session   = 0;
+    unsigned long displace  = 0;
+    unsigned long unlimited = 0;
+    unsigned long unset     = 0;
+
+    unsigned long rc = 0;
+
+    Inline_Stack_Vars;
+    Inline_Stack_Reset;
+
+    rc = ivadmin_context_getmaxconcurwebsess( *ctx,
+				      &session,
+				      &displace,
+				      &unlimited,
+				      &unset,
+				      rsp);
+    
+    if ( rc == IVADMIN_TRUE ) {
+	Inline_Stack_Push(sv_2mortal(newSViv(session)));
+	Inline_Stack_Push(sv_2mortal(newSViv(displace == IVADMIN_TRUE)));
+	Inline_Stack_Push(sv_2mortal(newSViv(unlimited == IVADMIN_TRUE)));
+	Inline_Stack_Push(sv_2mortal(newSViv(unset == IVADMIN_TRUE)));
+    }
+
+    Inline_Stack_Done;
+}
+
 int context_setaccexpdate( SV* cont, SV* resp, unsigned long seconds, 
 			   unsigned long unlimited, unsigned long unset) {
     ivadmin_context* ctx = (ivadmin_context*)SvIV(SvRV(cont));
@@ -1529,6 +1700,21 @@ int context_settodaccess( SV* cont, SV* resp, unsigned long days,
     					end,
     					reference,
 					unset,
+					rsp ) );
+}
+
+int context_setmaxconcurwebsess(SV* cont, SV* resp, unsigned long sessions,
+				unsigned long displace, unsigned long
+				unlimited, unsigned long unset) {
+
+    ivadmin_context* ctx = (ivadmin_context*)SvIV(SvRV(cont));
+    ivadmin_response* rsp = _getresponse( resp );
+
+    return( ivadmin_context_setmaxconcurwebsess(*ctx,
+    					sessions,
+    					displace,
+    					unlimited,
+    					unset,
 					rsp ) );
 }
 

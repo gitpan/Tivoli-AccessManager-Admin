@@ -1,9 +1,8 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::rsrcgroup;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::rsrcgroup::VERSION = '1.00';
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
 sub complete {
     my ($tam, $tokref, $word, $buffer, $start) = @_;

@@ -9,12 +9,12 @@ use Tivoli::AccessManager::Admin::Response;
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # $Id: ACL.pm 189 2005-12-15 05:39:43Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::AuthzRule::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::AuthzRule::VERSION = '1.10';
 use Inline( C => 'DATA',
 		 INC  => '-I/opt/PolicyDirector/include',
                  LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		 CCFLAGS => '-Wall',
-		 VERSION => '1.00',
+		 VERSION => '1.10',
 		 NAME => 'Tivoli::AccessManager::Admin::AuthzRule');
 
 sub new {
@@ -63,6 +63,11 @@ sub list {
     }
     else {
 	$pd = shift;
+	unless ( defined($pd) and UNIVERSAL::isa($pd,'Tivoli::AccessManager::Admin::Context' ) ) {
+	    $resp->set_message("Incorrect syntax -- did you forget the context?");
+	    $resp->set_isok(0);
+	    return $resp;
+	}
     }
 
     if ( @_ % 2 ) {
@@ -280,18 +285,18 @@ sub ruletext {
     my ( $rc, $text, $string );
     my $resp = Tivoli::AccessManager::Admin::Response->new();
 
-    unless ( $self->{exist} ) {
-	$resp->set_message("Cannot add rule text to a non-existant rule");
-	$resp->set_isok(0);
-	return $resp;
-    }
-
     if ( @_ % 2 ) {
 	$resp->set_message("Invalid syntax");
 	$resp->set_isok(0);
 	return $resp;
     }
     my %opts = @_;
+
+    unless ( $self->{exist} ) {
+	$resp->set_message("Cannot add rule text to a non-existant rule");
+	$resp->set_isok(0);
+	return $resp;
+    }
 
     if ( defined($opts{file}) ) {
 	_readfile( $opts{file}, $resp );

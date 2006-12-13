@@ -8,12 +8,12 @@ use Data::Dumper;
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # $Id$
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::SSO::Web::VERSION = '1.00';
+$Tivoli::AccessManager::Admin::SSO::Web::VERSION = '1.10';
 use Inline(C => 'DATA',
 		INC  => '-I/opt/PolicyDirector/include',
                 LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		CCFLAGS => '-Wall',
-		VERSION => '1.00',
+		VERSION => '1.10',
 		NAME => 'Tivoli::AccessManager::Admin::SSO::Web',
 	   );
 
@@ -41,7 +41,7 @@ sub new {
     else {
 	my %opts = @_;
 	$name = $opts{name} || '';
-	$desc = $opts{description} || '';
+	$desc = $opts{desc} || '';
     }
 
     $self->{name} = $name;
@@ -85,7 +85,7 @@ sub create {
     else {
 	my %opts = @_;
 	$self->{name} = $opts{name} || $self->{name} || '';
-	$self->{desc} = $opts{description} || $self->{desc} || '';
+	$self->{desc} = $opts{desc} || $self->{desc} || '';
     }
 
     unless ( $self->{name} ) {
@@ -168,7 +168,6 @@ sub description {
     return $desc;
 }
 
-sub type  { return ssoweb_gettype(); }
 sub exist { return $_[0]->{exist} || 0; }
 
 1;
@@ -205,7 +204,7 @@ resources.
 
 =head1 CONSTRUCTOR
 
-=head2 new(PDADMIN[, name => STRING, description => STRING])
+=head2 new(PDADMIN[, name => STRING, desc => STRING])
 
 Creates a blessed L<Tivoli::AccessManager::Admin::SSO::Web> object and returns it.
 
@@ -225,7 +224,7 @@ The name of the SSO web resource.  If this is the only other parameter
 provided, you do not need to use a named parameter.  I.e., new($pd,"name")
 will assume "name" is the name of the resource.  This parameter is optional.
 
-=item description =E<gt> STRING
+=item desc =E<gt> STRING
 
 A description of the resource.  This is an optional parameter.
 
@@ -236,7 +235,7 @@ A description of the resource.  This is an optional parameter.
 A blessed L<Tivoli::AccessManager::Admin::SSO::Web> object if things worked.  undef will be
 returned otherwise, along with a nasty warning to STDERR.
 
-=head2 create(PDADMIN, <NAME|name =E<gt>  name, description =E<gt>  STRING>)
+=head2 create(PDADMIN, <NAME|name =E<gt>  name, desc =E<gt>  STRING>)
 
 Creates a new web GSO resource.
 
@@ -260,7 +259,7 @@ the resource to create -- either this way or the next way.
 
 An alternate way to provide the reource's name.
 
-=item description =E<gt> STRING
+=item desc =E<gt> STRING
 
 Provide a description for the GSO resource.  The only way to provide this to
 create is to use the full named parameter call.  It is an optional parameter.
@@ -303,7 +302,7 @@ The methods also follow the same basic pattern.  If an optional parameter is
 provided, it will have the affect of setting the attribute.  All method calls
 will embed the results of a 'get' in the L<Tivoli::AccessManager::Admin::Response> object.
 
-=head2 create( [NAME|name =E<gt> NAME[, description =E<gt> STRING]] )
+=head2 create( [NAME|name =E<gt> NAME[, desc =E<gt> STRING]] )
 
 As you might expect, create can also be used as a method call.
 
@@ -325,7 +324,7 @@ L</"create"> will be the one used.
 An alternate way to provide the name of the resource.  If you want to provide
 a description of the resource, you must use this form.
 
-=item description =E<gt> STRING
+=item desc =E<gt> STRING
 
 A description of the resource.  This is optional.  If you provide a
 description to both L</"new"> and L</"create">, the description given to
@@ -389,8 +388,8 @@ None.
 =head3 Returns
 
 The resource's description, if set.  This is returned as a string -- it is not
-embedded in an L<Tivoli::AccessManager::Admin::Response> object.  You will get an empty string
-if the description is not set.
+embedded in an L<Tivoli::AccessManager::Admin::Response> object.  You will get
+an empty string if the description is not set.
 
 =head2 exist
 
@@ -614,8 +613,6 @@ void ssoweb_list(SV* pd,SV* resp) {
     }
     Inline_Stack_Done;
 }
-
-int ssoweb_gettype() { return(IVADMIN_SSOCRED_SSOWEB); }
 
 void _ssowebfree( SV* self ) {
     ivadmin_ssoweb* web = _get_ssoweb(self);

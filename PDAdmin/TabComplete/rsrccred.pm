@@ -1,9 +1,9 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::rsrccred;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::rsrccred::VERSION = '1.00';
+use Data::Dumper;
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
 sub _showall {
     my ($tam,$word) = @_;

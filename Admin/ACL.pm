@@ -6,14 +6,14 @@ use Carp;
 use Tivoli::AccessManager::Admin::Response;
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# $Id: ACL.pm 309 2006-09-28 20:33:29Z mik $
+# $Id: ACL.pm 338 2006-12-13 16:57:19Z mik $
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-$Tivoli::AccessManager::Admin::ACL::VERSION = "1.00";
+$Tivoli::AccessManager::Admin::ACL::VERSION = '1.10';
 use Inline( C => 'DATA',
 		 INC  => '-I/opt/PolicyDirector/include',
                  LIBS => ' -lpthread  -lpdadminapi -lstdc++',
 		 CCFLAGS => '-Wall',
-		 VERSION => '1.00',
+		 VERSION => '1.10',
 		 NAME => 'Tivoli::AccessManager::Admin::ACL');
 
 sub new {

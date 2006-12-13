@@ -1,9 +1,8 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::user;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::user::VERSION = '1.00';
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
 sub _modUser {
     my ($tam, $tokref, $word, $buffer, $start, $tok_cnt) = @_;

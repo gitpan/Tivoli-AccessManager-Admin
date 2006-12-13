@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 # vim: set filetype=perl:
+# COVER:SSO/Group.pm
 use strict;
 use warnings;
 use Term::ReadKey;
 use Data::Dumper;
 
-use Test::More qw/no_plan/;
+use Test::More tests => 55;
 
 BEGIN {
     use_ok( 'Tivoli::AccessManager::Admin' );
@@ -112,7 +113,14 @@ is($resp->isok,1,"Added resources during the create");
 $gso = $resp->value;
 $resp = $gso->resources;
 is_deeply( [$resp->value], \@names, "The resources were added correctly");
+
+my $newgso = Tivoli::AccessManager::Admin::SSO::Group->new($pd, name => 'chimchim');
+is($resp->isok,1,"Cloned me an object");
+$resp = $newgso->resources;
+is_deeply([$resp->value], \@names, "And cloned it correctly");
+$newgso = undef;
 $resp = $gso->delete();
+
 
 $resp = Tivoli::AccessManager::Admin::SSO::Group->create($pd, name => 'chimchim', resources => "");
 is($resp->isok,1,"Called create with an empty list of resources");
@@ -123,6 +131,8 @@ $resp = $gso->delete();
 
 $resp = Tivoli::AccessManager::Admin::SSO::Group->create($pd, name => 'chimchim');
 $gso = $resp->value;
+
+
 
 print "\nTESTING resource add, remove and list\n";
 
@@ -182,6 +192,13 @@ is($resp->isok,0,"Sending resources() an odd number of parameters failed");
 $resp = $gso->get;
 is($resp->isok,0, "Couldn't get a non-existent GSO group");
 
+$resp = Tivoli::AccessManager::Admin::SSO::Group->list;
+is($resp->isok,0, "Could not call list with an empty parameter list");
+
+$resp = Tivoli::AccessManager::Admin::SSO::Group->list(name => 'chimchim');
+is($resp->isok,0, "Could not call list with a non-context object");
+
+
 print "\nTESTING evil\n";
 
 $gso->{exist} = 1;
@@ -202,6 +219,9 @@ $resp = $gso->create();
 $gso->{exist} = 0;
 $resp = $gso->create;
 is($resp->isok, 0, "Creating evil was denied");
+
+$gso->{exist} = 1;
+$resp = $gso->delete;
 
 print "\nCleaning up\n";
 

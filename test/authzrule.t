@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 # vim: set filetype=perl:
+# COVER:AuthzRule.pm
 use strict;
 use warnings;
 
 use Data::Dumper;
 use Term::ReadKey;
-use Test::More tests => 62;
+use Test::More tests => 74;
 
 BEGIN {
     use_ok( 'Tivoli::AccessManager::Admin' );
@@ -91,6 +92,9 @@ $resp = $rule->create( rule => $ruletext );
 is( $resp->isok, 1, "Create a rule with the ruletext only" );
 
 print "\nTesting the get/set calls\n";
+$resp = $rule->description;
+is($resp->value,'',"Got an empty description");
+
 $resp = $rule->description( description => 'Test authzrule' );
 is( $resp->isok, 1, "Set the description" );
 is( $resp->value, 'Test authzrule', "and got it back" );
@@ -98,6 +102,9 @@ is( $resp->value, 'Test authzrule', "and got it back" );
 $resp = $rule->description( 'Alternate Test authzrule' );
 is( $resp->isok, 1, "Set the description differently" );
 is( $resp->value, 'Alternate Test authzrule', "and got it back" );
+
+$resp = $rule->failreason;
+is($resp->value,'',"Got an empty description");
 
 $resp = $rule->failreason( reason => 'warning' );
 is( $resp->isok, 1, "Set the failreason" );
@@ -163,10 +170,10 @@ print "\nTesting some alternates\n";
 my $newrule = Tivoli::AccessManager::Admin::AuthzRule->new($pd, name => 'Test');
 is($rule->exist,1,"Create an authzrule object for an existing rule");
 
-$resp = $newrule->description( sillybastard => 'Borked description' );
+$resp = $newrule->description( silly => 'Borked description' );
 is($resp->isok,1, 'Could call description with a nonsense hash');
 
-$resp = $newrule->failreason( sillybastard => 'Borked description' );
+$resp = $newrule->failreason( silly => 'Borked description' );
 is($resp->isok,1, 'Could call failreason with a nonsense hash');
 
 print "\nTesting breakages\n";
@@ -217,11 +224,17 @@ is($foo, undef, "Couldn't call new w/o the context");
 $foo = Tivoli::AccessManager::Admin::AuthzRule->new( undef, name => 'borked' );
 is($foo, undef, "Couldn't call new with an undefined context");
 
+$resp = Tivoli::AccessManager::Admin::AuthzRule->list(undef, 'w00t');
+is($resp->isok, 0, "Couldn't call list with an undefined context");
+
 $foo = Tivoli::AccessManager::Admin::AuthzRule->new( $rule, name => 'borked' );
 is($foo, undef, "Couldn't call new with something that wasn't a context");
 
 $foo = Tivoli::AccessManager::Admin::AuthzRule->new( $pd, 'borked', 'borked', 'borked' );
 is($foo, undef, "Odd number of parameters to new failed");
+
+$resp = Tivoli::AccessManager::Admin::AuthzRule->list($rule, name => 'borked');
+is($resp->isok, 0, "Couldn't call list with something that wasn't a context");
 
 $resp = Tivoli::AccessManager::Admin::AuthzRule->list($pd, 'w00t');
 is($resp->isok, 0, "Odd number of parameters to list failed");
@@ -239,10 +252,39 @@ is( $resp->isok, 0, "Odd number of parameters to ruletext failed");
 $resp = $foo->failreason( 'work', 'work', 'work' );
 is( $resp->isok, 0, "Odd number of parameters to failreason failed");
 
-$foo = Tivoli::AccessManager::Admin::AuthzRule->new($pd, sillybastard => 'borked' );
+$resp = $foo->detach;
+is($resp->isok,0,"Could not detach a non-existant rule");
+
+$foo = Tivoli::AccessManager::Admin::AuthzRule->new($pd, silly => 'borked' );
 is( $foo->exist, 0, "Bad hash key worked");
 
 print "\nTESTing evil\n";
+
+$rule->{exist} = 0;
+$resp = $rule->create(rule => $ruletext );
+is($resp->isok,0,"Could not create an evil rule");
+$rule->{exist} = 1;
+
+$foo->{exist} = 1;
+$resp = $foo->attach("/test");
+is($resp->isok,0,"Could not attach an evil rule");
+
+$resp = $foo->detach("/test");
+is($resp->isok,0,"Could not detach an evil rule");
+
+$resp = $foo->delete;
+is($resp->isok,0,"Could not delete an evil rule");
+
+$resp = $foo->description('Evil');
+is($resp->isok,0,"Could not describe an evil rule");
+
+$resp = $foo->ruletext(rule => $ruletext);
+is($resp->isok,0,"Could not set the ruletext for an evil rule");
+
+$resp = $foo->failreason("Ooops");
+is($resp->isok,0,"Could not set the failreason for an evil rule");
+
+$foo->{exist} = 0;
 
 # Clean up
 print "\nCleaning up\n";

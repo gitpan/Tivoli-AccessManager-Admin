@@ -1,9 +1,8 @@
 package Tivoli::AccessManager::PDAdmin::TabComplete::acl;
 use strict;
 use warnings;
-use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
-$Tivoli::AccessManager::PDAdmin::TabComplete::acl::VERSION = '1.00';
+use Tivoli::AccessManager::PDAdmin::TabComplete::utils;
 
 sub _get_acl_info {
     my ($acl, $request) = @_;
